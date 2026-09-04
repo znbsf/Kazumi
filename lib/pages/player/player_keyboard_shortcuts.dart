@@ -7,6 +7,7 @@ import 'package:kazumi/utils/constants.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
 
 typedef PlayerShortcutAction = FutureOr<void> Function();
+typedef PlayerNavigationKeyHandler = bool Function(LogicalKeyboardKey key);
 
 class PlayerLongPressShortcutActions {
   const PlayerLongPressShortcutActions({
@@ -32,6 +33,7 @@ class PlayerKeyboardShortcuts extends StatefulWidget {
     this.longPressActions = const <String, PlayerLongPressShortcutActions>{},
     this.isBlocked,
     this.shouldHandleAction,
+    this.onNavigationKey,
     this.shortcuts,
   });
 
@@ -41,6 +43,7 @@ class PlayerKeyboardShortcuts extends StatefulWidget {
   final bool Function()? isBlocked;
   final bool Function(String actionName, LogicalKeyboardKey key)?
       shouldHandleAction;
+  final PlayerNavigationKeyHandler? onNavigationKey;
   final Map<String, List<String>>? shortcuts;
 
   @override
@@ -125,6 +128,11 @@ class _PlayerKeyboardShortcutsState extends State<PlayerKeyboardShortcuts> {
 
     if (!_shouldHandleShortcut()) {
       return KeyEventResult.ignored;
+    }
+
+    if ((event is KeyDownEvent || event is KeyRepeatEvent) &&
+        (widget.onNavigationKey?.call(event.logicalKey) ?? false)) {
+      return KeyEventResult.handled;
     }
 
     final keyLabel = event.logicalKey.keyLabel.isNotEmpty

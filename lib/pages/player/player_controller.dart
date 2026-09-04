@@ -337,6 +337,9 @@ class PlayerController implements Disposable {
   Future<void> pause({bool enableSync = true}) async {
     final player = playback.mediaPlayer;
     if (player == null) return;
+    // A short pause/resume can otherwise let delayed comments from before the
+    // pause appear at the resumed position.
+    danmaku.invalidateScheduledDanmakus();
     danmaku.canvasController.pause();
     try {
       await player.pause();

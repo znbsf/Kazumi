@@ -10,6 +10,7 @@ class CollectButton extends StatefulWidget {
     this.color = Colors.white,
     this.onOpen,
     this.onClose,
+    this.focusNode,
   }) {
     isExtended = false;
   }
@@ -20,6 +21,7 @@ class CollectButton extends StatefulWidget {
     this.color = Colors.white,
     this.onOpen,
     this.onClose,
+    this.focusNode,
   }) {
     isExtended = true;
   }
@@ -29,6 +31,7 @@ class CollectButton extends StatefulWidget {
   late final bool isExtended;
   final void Function()? onOpen;
   final void Function()? onClose;
+  final FocusNode? focusNode;
 
   @override
   State<CollectButton> createState() => _CollectButtonState();
@@ -93,6 +96,7 @@ class _CollectButtonState extends State<CollectButton> {
       builder: (_, MenuController controller, __) {
         if (widget.isExtended) {
           return FilledButton.icon(
+            focusNode: widget.focusNode,
             onPressed: () {
               if (controller.isOpen) {
                 controller.close();
@@ -105,6 +109,7 @@ class _CollectButtonState extends State<CollectButton> {
           );
         } else {
           return IconButton(
+            focusNode: widget.focusNode,
             onPressed: () {
               if (controller.isOpen) {
                 controller.close();

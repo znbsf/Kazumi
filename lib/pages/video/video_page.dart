@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:canvas_danmaku/models/danmaku_content_item.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:kazumi/pages/player/player_controller.dart';
 import 'package:kazumi/pages/video/video_controller.dart';
@@ -29,6 +30,7 @@ import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/services/platform/display_mode_service.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
 import 'package:mobx/mobx.dart' as mobx;
+import 'package:kazumi/bean/widget/tv_focusable_surface.dart';
 
 class VideoPage extends StatefulWidget {
   const VideoPage({
@@ -64,6 +66,7 @@ class _VideoPageState extends State<VideoPage>
   StreamSubscription<String>? _logSubscription;
   final FocusNode keyboardFocus =
       FocusNode(debugLabel: 'Video player shortcut scope');
+  final Map<String, FocusNode> _episodeFocusNodes = <String, FocusNode>{};
 
   ScrollController scrollController = ScrollController();
   late GridObserverController observerController;
@@ -275,6 +278,9 @@ class _VideoPageState extends State<VideoPage>
     }
     DisplayModeService.unlockScreenRotation();
     keyboardFocus.dispose();
+    for (final focusNode in _episodeFocusNodes.values) {
+      focusNode.dispose();
+    }
     tabController.dispose();
     TimedShutdownService().cancel();
     super.dispose();
@@ -352,6 +358,7 @@ class _VideoPageState extends State<VideoPage>
   void _openTabBodyAnimated() {
     _setTabBodyVisible(true, animated: true);
     menuJumpToCurrentEpisode();
+    _focusCurrentEpisode();
   }
 
   void _closeTabBodyAnimated() {
@@ -370,11 +377,40 @@ class _VideoPageState extends State<VideoPage>
   void _showTabBodyImmediately() {
     _setTabBodyVisible(true, animated: false);
     menuJumpToCurrentEpisode();
+    _focusCurrentEpisode();
   }
 
   void _showEpisodeGuide() {
     tabController.animateTo(0);
     _openTabBodyAnimated();
+  }
+
+  FocusNode _episodeFocusNode(int road, int episode) {
+    final key = '$road:$episode';
+    return _episodeFocusNodes.putIfAbsent(
+      key,
+      () => FocusNode(debugLabel: 'Episode $key'),
+    );
+  }
+
+  void _focusCurrentEpisode([int attempt = 0]) {
+    if (!TvMode.enabled) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !videoPageController.showTabBody) return;
+      final selected = videoPageController.selectedEpisode;
+      final episode = visibleRoad == selected.road ? selected.episode : 1;
+      final focusNode = _episodeFocusNodes['$visibleRoad:$episode'];
+      if (focusNode?.context != null) {
+        focusNode!.requestFocus();
+        return;
+      }
+
+      // The side panel is rebuilt by a MobX observer after showTabBody changes.
+      // Its focus nodes may therefore attach one frame later than the animation.
+      if (attempt < 4) {
+        _focusCurrentEpisode(attempt + 1);
+      }
+    });
   }
 
   void _hideTabBodyImmediately() {
@@ -652,7 +688,16 @@ class _VideoPageState extends State<VideoPage>
                           width: MediaQuery.sizeOf(context).width,
                           child: Focus(
                             focusNode: keyboardFocus,
-                            autofocus: true,
+                            // This node is the player's global shortcut
+                            // receiver. TV controls may request it explicitly
+                            // while the overlay is hidden, but it must not
+                            // become an invisible stop between visible buttons.
+                            skipTraversal: TvMode.enabled,
+                            // On TV the episode rail owns initial focus while
+                            // it is visible. PlayerItem is mounted later, once
+                            // loading completes, and must not steal that focus.
+                            autofocus: !TvMode.enabled ||
+                                !videoPageController.showTabBody,
                             child: playerBody,
                           ),
                         ),
@@ -685,15 +730,19 @@ class _VideoPageState extends State<VideoPage>
   }
 
   Widget get sideTabBody {
+    final size = MediaQuery.sizeOf(context);
+    final sideWidth = TvMode.enabled
+        ? (size.width * 0.42).clamp(360.0, 440.0).toDouble()
+        : (!isDesktop() && !isTablet())
+            ? size.height
+            : (size.width / 3 > 420 ? 420.0 : size.width / 3);
     return SizedBox(
-      height: MediaQuery.sizeOf(context).height,
-      width: (!isDesktop() && !isTablet())
-          ? MediaQuery.sizeOf(context).height
-          : (MediaQuery.sizeOf(context).width / 3 > 420
-              ? 420
-              : MediaQuery.sizeOf(context).width / 3),
+      height: size.height,
+      width: sideWidth,
       child: Container(
-        color: Theme.of(context).canvasColor,
+        color: Theme.of(context)
+            .canvasColor
+            .withValues(alpha: TvMode.enabled ? 0.88 : 1),
         child: (isDesktop() || isTablet())
             ? tabBody
             : GridViewObserver(
@@ -943,6 +992,7 @@ class _VideoPageState extends State<VideoPage>
                   setState(() {
                     visibleRoad = i;
                   });
+                  _focusCurrentEpisode();
                 },
                 child: Container(
                   height: 48,
@@ -1032,75 +1082,87 @@ class _VideoPageState extends State<VideoPage>
           int count = 1;
           for (var urlItem in road.data) {
             int count0 = count;
+            final isSelected =
+                count0 == videoPageController.selectedEpisode.episode &&
+                    visibleRoad == videoPageController.selectedEpisode.road;
             final episodeName = count0 - 1 < road.identifier.length
                 ? road.identifier[count0 - 1]
                 : '第$count0集';
-            cardList.add(Container(
-              margin: const EdgeInsets.only(bottom: 4),
-              child: Material(
-                color: Theme.of(context).colorScheme.onInverseSurface,
-                borderRadius: BorderRadius.circular(6),
-                clipBehavior: Clip.hardEdge,
-                child: InkWell(
-                  onTap: () async {
-                    if (count0 == videoPageController.selectedEpisode.episode &&
-                        videoPageController.selectedEpisode.road ==
-                            visibleRoad) {
-                      return;
-                    }
-                    KazumiLogger()
-                        .i('VideoPageController: video URL is $urlItem');
-                    _closeTabBodyAnimated();
-                    changeEpisode(count0, currentRoad: visibleRoad);
-                  },
-                  child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                          children: [
-                            if (count0 ==
-                                    (videoPageController
-                                        .selectedEpisode.episode) &&
-                                visibleRoad ==
-                                    videoPageController
-                                        .selectedEpisode.road) ...<Widget>[
-                              Image.asset(
-                                'assets/images/playing.gif',
-                                color: Theme.of(context).colorScheme.primary,
-                                height: 12,
-                              ),
-                              const SizedBox(width: 6)
-                            ],
-                            Expanded(
-                                child: Text(
+            void selectEpisode() {
+              if (isSelected) return;
+              KazumiLogger().i('VideoPageController: video URL is $urlItem');
+              _closeTabBodyAnimated();
+              unawaited(changeEpisode(count0, currentRoad: visibleRoad));
+            }
+
+            final card = Material(
+              color: Theme.of(context).colorScheme.onInverseSurface.withValues(
+                    alpha: TvMode.enabled ? 0.74 : 1,
+                  ),
+              borderRadius: BorderRadius.circular(6),
+              clipBehavior: Clip.hardEdge,
+              child: InkWell(
+                canRequestFocus: !TvMode.enabled,
+                onTap: selectEpisode,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: TvMode.enabled ? 5 : 8,
+                    horizontal: TvMode.enabled ? 8 : 10,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Row(
+                        children: [
+                          if (isSelected) ...<Widget>[
+                            Image.asset(
+                              'assets/images/playing.gif',
+                              color: Theme.of(context).colorScheme.primary,
+                              height: 12,
+                            ),
+                            const SizedBox(width: 6)
+                          ],
+                          Expanded(
+                            child: Text(
                               episodeName,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  fontSize: 13,
-                                  color: (count0 ==
-                                              videoPageController
-                                                  .selectedEpisode.episode &&
-                                          visibleRoad ==
-                                              videoPageController
-                                                  .selectedEpisode.road)
-                                      ? Theme.of(context).colorScheme.primary
-                                      : Theme.of(context)
-                                          .colorScheme
-                                          .onSurface),
-                            )),
-                            _buildDownloadStatusIcon(count0, urlItem),
-                            const SizedBox(width: 2),
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                      ],
-                    ),
+                                fontSize: TvMode.enabled ? 12 : 13,
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          _buildDownloadStatusIcon(count0, urlItem),
+                          const SizedBox(width: 2),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
+              ),
+            );
+            cardList.add(Container(
+              margin: const EdgeInsets.only(bottom: 2),
+              child: TvFocusableSurface(
+                enabled: TvMode.enabled,
+                focusNode: _episodeFocusNode(visibleRoad, count0),
+                autofocus: TvMode.enabled && isSelected,
+                highlighted: isSelected,
+                borderRadius: 6,
+                onPressed: selectEpisode,
+                onKeyEvent: (_, event) {
+                  if (event is KeyDownEvent &&
+                      event.logicalKey == LogicalKeyboardKey.arrowLeft &&
+                      (count0 - 1) % (TvMode.enabled ? 4 : 3) == 0) {
+                    _closeTabBodyAnimated();
+                    return KeyEventResult.handled;
+                  }
+                  return KeyEventResult.ignored;
+                },
+                child: card,
               ),
             ));
             count++;
@@ -1113,10 +1175,10 @@ class _VideoPageState extends State<VideoPage>
               scrollDirection: Axis.vertical,
               controller: scrollController,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 5,
-                mainAxisExtent: 70,
+                crossAxisCount: TvMode.enabled ? 4 : 3,
+                crossAxisSpacing: TvMode.enabled ? 6 : 10,
+                mainAxisSpacing: TvMode.enabled ? 3 : 5,
+                mainAxisExtent: TvMode.enabled ? 52 : 70,
               ),
               itemCount: cardList.length,
               itemBuilder: (context, index) {

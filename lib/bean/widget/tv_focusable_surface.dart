@@ -86,6 +86,11 @@ class _TvFocusableSurfaceState extends State<TvFocusableSurface> {
       child: Focus(
         focusNode: widget.focusNode,
         autofocus: widget.autofocus,
+        // The wrapper is the single remote-control target. Cards often contain
+        // an InkWell/Button for pointer input; allowing that child to join TV
+        // traversal creates an invisible extra stop inside the same card.
+        descendantsAreFocusable: false,
+        descendantsAreTraversable: false,
         onFocusChange: _handleFocusChange,
         onKeyEvent: _handleKeyEvent,
         child: AnimatedScale(

@@ -94,4 +94,49 @@ void main() {
 
     expect(changes, contains(true));
   });
+
+  testWidgets('one D-pad step skips nested pointer focus targets',
+      (tester) async {
+    final firstFocus = FocusNode();
+    final secondFocus = FocusNode();
+    addTearDown(firstFocus.dispose);
+    addTearDown(secondFocus.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Row(
+            children: [
+              TvFocusableSurface(
+                enabled: true,
+                autofocus: true,
+                focusNode: firstFocus,
+                onPressed: () {},
+                child: InkWell(
+                  onTap: () {},
+                  child: const SizedBox(width: 120, height: 80),
+                ),
+              ),
+              TvFocusableSurface(
+                enabled: true,
+                focusNode: secondFocus,
+                onPressed: () {},
+                child: InkWell(
+                  onTap: () {},
+                  child: const SizedBox(width: 120, height: 80),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(firstFocus.hasFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+
+    expect(secondFocus.hasFocus, isTrue);
+  });
 }

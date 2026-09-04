@@ -27,21 +27,38 @@ Android 官方还要求 TV 播放控件遵循一致的媒体键行为：
   `hwdec-current`、`hwdec-interop`、`current-vo`、`current-gpu-context`、
   像素格式、估算帧率、缓存时长和丢帧；
 - 音量键交由 Android TV 系统处理，避免播放器吞掉 CEC/ARC 音量事件；
-- 不改变现有播放器配色、控件结构和弹幕行为。
+- 控制层沿用现有播放器配色和结构，只在 TV 增加焦点描边、紧凑半透明选集面板及
+  显式的顶栏/底栏 D-pad 焦点拓扑。
 
 ## 硬件解码边界
 
-当前 Android 默认开启硬件加速，解码器配置为 `auto-safe`。media-kit 将该值传给
-libmpv 的 `hwdec`；Android 可用时会选择 MediaCodec，不可用时允许回退到软件解码。
-Android 14 及以上默认使用 `gpu-next`，较早版本使用 `gpu`。
+Android 解码器仍使用 `auto-safe`。播放器根据 flavor/设备选择视频输出：TV 的
+“自动”使用 `mediacodec_embed`，让 MediaCodec 直接输出到 Android Surface；手机版
+继续按 Android 版本使用原有 `gpu` / `gpu-next` 逻辑，用户显式选择也始终优先。
 
-`mediacodec_embed` 仍作为功耗优先的手动选项存在，它会强制 MediaCodec 通路，但
-不支持超分辨率，并会限制 mpv 的视频滤镜/OSD 合成能力，因此不设为 TV 默认值。
+直连 Surface 不支持 Anime4K 超分辨率，并会限制部分 mpv 视频滤镜/OSD 合成，因此
+代码会阻止这组不兼容配置。保留 libmpv 是产品边界，不为 tunneled playback 等能力
+替换成 Media3。实现依据还包括 mpv 的
+[Android video output 文档](https://github.com/mpv-player/mpv/blob/master/DOCS/man/vo.rst)
+和 media-kit 的 Android Surface/MediaCodec 问题记录
+[#1243](https://github.com/media-kit/media-kit/issues/1243)、
+[#1391](https://github.com/media-kit/media-kit/issues/1391)。
 
 状态页中的 `hwdec-current=mediacodec` 或 `mediacodec-copy` 证明当前流进入
 MediaCodec 解码通路；模拟器的 MediaCodec 仍可能由宿主机或软件组件实现，不能当作
-实体电视芯片硬解证明。最终验收需
-在真实电视/盒子上结合解码器组件日志、CPU/GPU 负载、丢帧、4K/HDR 和长时间播放完成。
+实体电视芯片硬解证明。既有真机 A/B 只支持“直连 Surface 解决了所测 1080p 速度问题”
+这一结论，4K/HDR、功耗和长时间稳定性仍需单独验收。
+
+## 弹幕开放平台边界
+
+弹弹 play 的[开放平台文档](https://doc.dandanplay.com/open/)说明 AppId/AppSecret、
+时间戳和签名头是必要条件，HTTP 403 也覆盖缺失或错误的认证信息；接口可在
+[官方 Swagger](https://api.dandanplay.net/swagger/index.html)查看。文档同时建议开源
+客户端不要硬编码共享密钥，可使用构建时占位替换或自有服务端转发。
+
+Kazumi TV 因此采用 `DANDANAPI_APPID` / `DANDANAPI_KEY` 的 `dart-define` 注入：
+凭证不完整时在请求前失败并显示明确提示。时间轴调度另行解决暂停/慢速重复发送、
+短暂快进漏发和 seek 后旧延迟任务污染新时间点的问题；这些行为由单元测试覆盖。
 
 ## 暂不直接移植
 

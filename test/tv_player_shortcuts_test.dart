@@ -155,4 +155,116 @@ void main() {
     expect(shortcutCount, 0);
     expect(buttonCount, 1);
   });
+
+  testWidgets('visible control navigation wins over seek shortcuts', (
+    tester,
+  ) async {
+    final focusScopeNode = FocusScopeNode();
+    addTearDown(focusScopeNode.dispose);
+    var navigationCount = 0;
+    var seekCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FocusScope(
+          node: focusScopeNode,
+          child: Column(
+            children: [
+              PlayerKeyboardShortcuts(
+                focusScopeNode: focusScopeNode,
+                shortcuts: {
+                  'forward': [_label(LogicalKeyboardKey.arrowRight)],
+                },
+                actions: {'forward': () => seekCount += 1},
+                onNavigationKey: (key) {
+                  if (key != LogicalKeyboardKey.arrowRight) return false;
+                  navigationCount += 1;
+                  return true;
+                },
+              ),
+              const Focus(autofocus: true, child: SizedBox()),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    expect(navigationCount, 1);
+    expect(seekCount, 0);
+  });
+
+  testWidgets('deferred TV D-pad navigation does not fall through to seek', (
+    tester,
+  ) async {
+    final focusScopeNode = FocusScopeNode();
+    addTearDown(focusScopeNode.dispose);
+    var seekCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FocusScope(
+          node: focusScopeNode,
+          child: Column(
+            children: [
+              PlayerKeyboardShortcuts(
+                focusScopeNode: focusScopeNode,
+                shortcuts: {
+                  'forward': [_label(LogicalKeyboardKey.arrowRight)],
+                },
+                actions: {'forward': () => seekCount += 1},
+                onNavigationKey: (_) => false,
+                shouldHandleAction: (_, __) => false,
+              ),
+              const Focus(autofocus: true, child: SizedBox()),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    expect(seekCount, 0);
+  });
+
+  testWidgets('an open TV overlay blocks player seek shortcuts', (
+    tester,
+  ) async {
+    final focusScopeNode = FocusScopeNode();
+    addTearDown(focusScopeNode.dispose);
+    var seekCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FocusScope(
+          node: focusScopeNode,
+          child: Column(
+            children: [
+              PlayerKeyboardShortcuts(
+                focusScopeNode: focusScopeNode,
+                shortcuts: {
+                  'forward': [_label(LogicalKeyboardKey.arrowRight)],
+                },
+                actions: {'forward': () => seekCount += 1},
+                isBlocked: () => true,
+              ),
+              const Focus(autofocus: true, child: SizedBox()),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+
+    expect(seekCount, 0);
+  });
 }

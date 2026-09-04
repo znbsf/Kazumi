@@ -14,6 +14,15 @@ final class PlayerDiagnosticsSnapshot {
     required this.pixelFormat,
     required this.hardwarePixelFormat,
     required this.estimatedFps,
+    required this.audioOutput,
+    required this.audioInputSampleRate,
+    required this.audioOutputSampleRate,
+    required this.avSync,
+    required this.audioDelay,
+    required this.totalAvSyncChange,
+    required this.mistimedFrames,
+    required this.delayedFrames,
+    required this.vsyncRatio,
     required this.cacheDuration,
     required this.outputDroppedFrames,
     required this.decoderDroppedFrames,
@@ -38,6 +47,15 @@ final class PlayerDiagnosticsSnapshot {
       pixelFormat: properties['video-params/pixelformat'] ?? '',
       hardwarePixelFormat: properties['video-params/hw-pixelformat'] ?? '',
       estimatedFps: properties['estimated-vf-fps'] ?? '',
+      audioOutput: properties['current-ao'] ?? '',
+      audioInputSampleRate: properties['audio-params/samplerate'] ?? '',
+      audioOutputSampleRate: properties['audio-out-params/samplerate'] ?? '',
+      avSync: properties['avsync'] ?? '',
+      audioDelay: properties['audio-delay'] ?? '',
+      totalAvSyncChange: properties['total-avsync-change'] ?? '',
+      mistimedFrames: properties['mistimed-frame-count'] ?? '',
+      delayedFrames: properties['vo-delayed-frame-count'] ?? '',
+      vsyncRatio: properties['vsync-ratio'] ?? '',
       cacheDuration: properties['demuxer-cache-duration'] ?? '',
       outputDroppedFrames: properties['frame-drop-count'] ?? '',
       decoderDroppedFrames: properties['decoder-frame-drop-count'] ?? '',
@@ -56,6 +74,15 @@ final class PlayerDiagnosticsSnapshot {
   final String pixelFormat;
   final String hardwarePixelFormat;
   final String estimatedFps;
+  final String audioOutput;
+  final String audioInputSampleRate;
+  final String audioOutputSampleRate;
+  final String avSync;
+  final String audioDelay;
+  final String totalAvSyncChange;
+  final String mistimedFrames;
+  final String delayedFrames;
+  final String vsyncRatio;
   final String cacheDuration;
   final String outputDroppedFrames;
   final String decoderDroppedFrames;
@@ -106,8 +133,33 @@ final class PlayerDiagnosticsSnapshot {
         ? '—'
         : _formatInteger(decoderDroppedFrames);
     final cache = _formatDecimal(cacheDuration, suffix: ' 秒');
+    final mistimed =
+        mistimedFrames.isEmpty ? '—' : _formatInteger(mistimedFrames);
+    final delayed = delayedFrames.isEmpty ? '—' : _formatInteger(delayedFrames);
     return '输出丢帧 $outputDrops · 解码丢帧 $decoderDrops'
+        ' · 误时 $mistimed · 延迟 $delayed'
         '${cache.isEmpty ? '' : ' · 缓存 $cache'}';
+  }
+
+  String get audioClockSummary {
+    final rates = [
+      if (audioInputSampleRate.isNotEmpty)
+        '输入 ${_formatRate(audioInputSampleRate)}',
+      if (audioOutputSampleRate.isNotEmpty)
+        '输出 ${_formatRate(audioOutputSampleRate)}',
+    ];
+    final sync = _formatMilliseconds(avSync);
+    final delay = _formatMilliseconds(audioDelay);
+    final total = _formatMilliseconds(totalAvSyncChange);
+    final values = [
+      if (audioOutput.isNotEmpty) audioOutput,
+      ...rates,
+      if (sync.isNotEmpty) 'A/V $sync',
+      if (delay.isNotEmpty) '音频延迟 $delay',
+      if (total.isNotEmpty) '累计校正 $total',
+      if (vsyncRatio.isNotEmpty) 'VSync ${_formatPlain(vsyncRatio)}',
+    ];
+    return values.isEmpty ? '暂无数据' : values.join(' · ');
   }
 
   static String _formatInteger(String value) {
@@ -121,6 +173,24 @@ final class PlayerDiagnosticsSnapshot {
         ? parsed.toStringAsFixed(0)
         : parsed.toStringAsFixed(2);
     return '$formatted$suffix';
+  }
+
+  static String _formatRate(String value) {
+    final parsed = double.tryParse(value);
+    if (parsed == null) return '$value Hz';
+    return '${parsed.round()} Hz';
+  }
+
+  static String _formatMilliseconds(String value) {
+    final parsed = double.tryParse(value);
+    if (parsed == null) return value.isEmpty ? '' : value;
+    final milliseconds = parsed * 1000;
+    return '${milliseconds.toStringAsFixed(milliseconds.abs() < 10 ? 2 : 1)} ms';
+  }
+
+  static String _formatPlain(String value) {
+    final parsed = double.tryParse(value);
+    return parsed?.toStringAsFixed(4) ?? value;
   }
 }
 

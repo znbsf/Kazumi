@@ -9,6 +9,7 @@ import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/storage/storage.dart';
 import 'package:mobx/mobx.dart';
 import 'package:kazumi/utils/danmaku.dart';
+import 'package:kazumi/utils/dandan_credentials.dart';
 
 part 'player_danmaku_controller.g.dart';
 
@@ -21,11 +22,17 @@ enum DanmakuLoadStatus {
   failed,
 }
 
+enum DanmakuLoadFailure {
+  missingCredentials,
+  request,
+}
+
 class DanmakuLoadResult {
   const DanmakuLoadResult({
     required this.danmakus,
     required this.bangumiID,
     required this.status,
+    this.failure,
   });
 
   factory DanmakuLoadResult.success({
@@ -43,17 +50,20 @@ class DanmakuLoadResult {
 
   factory DanmakuLoadResult.failed({
     required int bangumiID,
+    DanmakuLoadFailure failure = DanmakuLoadFailure.request,
   }) {
     return DanmakuLoadResult(
       danmakus: const [],
       bangumiID: bangumiID,
       status: DanmakuLoadStatus.failed,
+      failure: failure,
     );
   }
 
   final List<DanmakuEntry> danmakus;
   final int bangumiID;
   final DanmakuLoadStatus status;
+  final DanmakuLoadFailure? failure;
 
   bool get hasDanmakus => status == DanmakuLoadStatus.success;
 
@@ -84,6 +94,46 @@ class DanmakuTimeline {
   }
 }
 
+/// Tracks source-time seconds already emitted to the canvas.
+///
+/// A wall-clock timer may fire more than once in the same media second during
+/// slow playback, or skip media seconds during faster playback. Small forward
+/// gaps are caught up; seeks and large discontinuities restart at the current
+/// second so old comments are never replayed in bulk.
+class DanmakuTimelineCursor {
+  int? _lastSourceSecond;
+
+  List<int> advance(
+    int? sourceSecond, {
+    int maxCatchUpSeconds = 3,
+  }) {
+    if (sourceSecond == null) {
+      return const [];
+    }
+
+    final previous = _lastSourceSecond;
+    _lastSourceSecond = sourceSecond;
+    if (previous == null || sourceSecond < previous) {
+      return [sourceSecond];
+    }
+    if (sourceSecond == previous) {
+      return const [];
+    }
+
+    final gap = sourceSecond - previous;
+    if (gap > maxCatchUpSeconds) {
+      return [sourceSecond];
+    }
+    return [
+      for (var second = previous + 1; second <= sourceSecond; second++) second
+    ];
+  }
+
+  void reset() {
+    _lastSourceSecond = null;
+  }
+}
+
 abstract class _PlayerDanmakuController with Store {
   _PlayerDanmakuController({
     required this.isLocalPlayback,
@@ -104,6 +154,7 @@ abstract class _PlayerDanmakuController with Store {
 
   int bangumiID = 0;
   int _scheduledDanmakuGeneration = 0;
+  final DanmakuTimelineCursor _timelineCursor = DanmakuTimelineCursor();
 
   int get scheduledDanmakuGeneration => _scheduledDanmakuGeneration;
 
@@ -127,13 +178,30 @@ abstract class _PlayerDanmakuController with Store {
     return danDanmakus[danmakuSecond] ?? const [];
   }
 
+  List<DanmakuEntry> pendingDanmakusForPlaybackPosition(
+    Duration playbackPosition,
+  ) {
+    final sourceSecond = resolveDanmakuSecond(playbackPosition);
+    final seconds = _timelineCursor.advance(sourceSecond);
+    return [
+      for (final second in seconds) ...danDanmakus[second] ?? const [],
+    ];
+  }
+
   @action
   void setDanmakuEnabled(bool value) {
     danmakuOn = value;
   }
 
-  void clearAndInvalidateScheduledDanmakus() {
+  void invalidateScheduledDanmakus({bool resetTimeline = false}) {
     _scheduledDanmakuGeneration++;
+    if (resetTimeline) {
+      _timelineCursor.reset();
+    }
+  }
+
+  void clearAndInvalidateScheduledDanmakus() {
+    invalidateScheduledDanmakus(resetTimeline: true);
     canvasController.clear();
   }
 
@@ -160,6 +228,7 @@ abstract class _PlayerDanmakuController with Store {
   @action
   void beginDanmakuLoad() {
     danDanmakus.clear();
+    invalidateScheduledDanmakus(resetTimeline: true);
     danmakuLoading = true;
   }
 
@@ -229,6 +298,15 @@ abstract class _PlayerDanmakuController with Store {
               bangumiID: nextBangumiID,
             );
           }
+        } on DandanCredentialsMissingException catch (e) {
+          KazumiLogger().w(
+            'PlayerController: local build is missing danmaku credentials',
+            error: e,
+          );
+          return DanmakuLoadResult.failed(
+            bangumiID: nextBangumiID,
+            failure: DanmakuLoadFailure.missingCredentials,
+          );
         } catch (e) {
           KazumiLogger().w(
               'PlayerController: failed to fetch danmaku online (may be offline)',
@@ -236,6 +314,15 @@ abstract class _PlayerDanmakuController with Store {
           return DanmakuLoadResult.failed(bangumiID: nextBangumiID);
         }
       }
+    } on DandanCredentialsMissingException catch (e) {
+      KazumiLogger().w(
+        'PlayerController: local build is missing danmaku credentials',
+        error: e,
+      );
+      return DanmakuLoadResult.failed(
+        bangumiID: nextBangumiID,
+        failure: DanmakuLoadFailure.missingCredentials,
+      );
     } catch (e) {
       KazumiLogger()
           .w('PlayerController: failed to load cached danmaku', error: e);
@@ -289,6 +376,15 @@ abstract class _PlayerDanmakuController with Store {
         danmakus: res,
         bangumiID: nextBangumiID,
       );
+    } on DandanCredentialsMissingException catch (e) {
+      KazumiLogger().w(
+        'PlayerController: local build is missing danmaku credentials',
+        error: e,
+      );
+      return DanmakuLoadResult.failed(
+        bangumiID: nextBangumiID,
+        failure: DanmakuLoadFailure.missingCredentials,
+      );
     } catch (e) {
       KazumiLogger().w(
           'PlayerController: failed to get danmaku [BgmBangumiID] $bgmBangumiID',
@@ -300,6 +396,7 @@ abstract class _PlayerDanmakuController with Store {
   @action
   Future<bool> getDanDanmakuByEpisodeID(int episodeID) async {
     KazumiLogger().i('PlayerController: attempting to get danmaku $episodeID');
+    invalidateScheduledDanmakus(resetTimeline: true);
     danmakuLoading = true;
     try {
       danDanmakus.clear();

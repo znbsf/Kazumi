@@ -12,6 +12,7 @@ import 'package:kazumi/pages/player/syncplay_sheet.dart';
 import 'package:kazumi/utils/constants.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/player/pip_utils.dart';
+import 'package:kazumi/services/player/android_video_output.dart';
 import 'package:kazumi/services/sync/webdav.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
@@ -134,6 +135,7 @@ class _PlayerItemState extends State<PlayerItem>
   PlayerPanelHold? _progressBarDragHold;
   PointerDeviceKind? _lastTapPointerKind;
   PointerDeviceKind? _lastDoubleTapPointerKind;
+  TraversalDirection _pendingTvControlDirection = TraversalDirection.down;
 
   late final AnimationController _panelVisibilityController;
   late final AnimationController _screenshotFeedbackController;
@@ -403,11 +405,36 @@ class _PlayerItemState extends State<PlayerItem>
   }
 
   void _showTvControls() {
+    widget.keyboardFocus.requestFocus();
     displayVideoController();
+    final direction = _pendingTvControlDirection;
+    _pendingTvControlDirection = TraversalDirection.down;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      FocusScope.of(context).nextFocus();
+      final focusScope = FocusScope.of(context);
+      if (!focusScope.focusInDirection(direction)) {
+        focusScope.nextFocus();
+      }
     });
+  }
+
+  bool _handleVisibleTvNavigationKey(LogicalKeyboardKey key) {
+    if (!TvMode.enabled ||
+        videoPageController.showTabBody ||
+        !playerController.panel.showVideoController ||
+        _openPlayerMenuCount > 0) {
+      return false;
+    }
+    final isArrowKey = key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight;
+    if (!isArrowKey) return false;
+    displayVideoController();
+    // Keep the overlay alive, then let Flutter's built-in directional focus
+    // policy move between the visible controls. The shortcut gate below keeps
+    // these same keys from being interpreted as seek/volume actions.
+    return false;
   }
 
   bool _shouldHandleTvRemoteAction(
@@ -416,6 +443,12 @@ class _PlayerItemState extends State<PlayerItem>
   ) {
     if (!TvMode.enabled) return true;
     if (shouldDeferTvKeyToPlatform(key)) return false;
+    if (actionName == 'showcontrols' &&
+        !playerController.panel.showVideoController) {
+      _pendingTvControlDirection = key == LogicalKeyboardKey.arrowUp
+          ? TraversalDirection.up
+          : TraversalDirection.down;
+    }
     final isNavigationKey = key == LogicalKeyboardKey.select ||
         key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.numpadEnter ||
@@ -548,7 +581,7 @@ class _PlayerItemState extends State<PlayerItem>
   void handleShortcutExitFullscreen() {
     if (videoPageController.isFullscreen && !isTablet()) {
       try {
-        playerController.danmaku.canvasController.clear();
+        playerController.danmaku.clearAndInvalidateScheduledDanmakus();
       } catch (_) {}
       DisplayModeService.exitFullScreen();
       videoPageController.isFullscreen = !videoPageController.isFullscreen;
@@ -651,7 +684,7 @@ class _PlayerItemState extends State<PlayerItem>
   }
 
   void handleDanmaku() {
-    playerController.danmaku.canvasController.clear();
+    playerController.danmaku.clearAndInvalidateScheduledDanmakus();
     if (playerController.danmaku.danmakuOn) {
       playerController.danmaku.setDanmakuEnabled(false);
       GStorage.putSetting(SettingsKeys.danmakuEnabledByDefault, false);
@@ -750,7 +783,7 @@ class _PlayerItemState extends State<PlayerItem>
   void _handleFullscreenChange(BuildContext context) async {
     playerController.panel.lockPanel = false;
     _releasePlayerPanelHolds();
-    playerController.danmaku.canvasController.clear();
+    playerController.danmaku.clearAndInvalidateScheduledDanmakus();
     _scheduleAndroidPIPSourceRectSync();
 
     await _syncHistoryWithWebDav();
@@ -858,7 +891,10 @@ class _PlayerItemState extends State<PlayerItem>
       final String androidVideoRenderer =
           GStorage.getSetting(SettingsKeys.androidVideoRenderer);
 
-      if (androidVideoRenderer == 'mediacodec_embed') {
+      if (usesAndroidDirectMediaCodecOutput(
+        configuredOutput: androidVideoRenderer,
+        isTv: TvMode.enabled,
+      )) {
         await KazumiDialog.show(builder: (context) {
           return AlertDialog(
             title: const Text('兼容性提示'),
@@ -986,6 +1022,9 @@ class _PlayerItemState extends State<PlayerItem>
     _panelVisibilityController.reverse();
     _cancelHideTimer();
     playerController.panel.showVideoController = false;
+    if (TvMode.enabled && !videoPageController.showTabBody) {
+      widget.keyboardFocus.requestFocus();
+    }
   }
 
   // All temporary panel blockers flow through this single lease registry.
@@ -1134,12 +1173,14 @@ class _PlayerItemState extends State<PlayerItem>
   void _emitDanmakusForCurrentPosition() {
     if (playerController.playback.currentPosition.inMicroseconds == 0 ||
         playerController.playback.playerPlaying != true ||
+        playerController.playback.playerBuffering ||
         playerController.danmaku.danmakuOn != true) {
       return;
     }
 
     final danmakus = playerController.danmaku
-        .danmakusForPlaybackPosition(playerController.playback.currentPosition);
+        .pendingDanmakusForPlaybackPosition(
+            playerController.playback.currentPosition);
     final danmakuCount = danmakus.length;
     for (final entry in danmakus.asMap().entries) {
       final idx = entry.key;
@@ -1436,7 +1477,7 @@ class _PlayerItemState extends State<PlayerItem>
 
   @override
   void onWindowRestore() {
-    playerController.danmaku.canvasController.clear();
+    playerController.danmaku.clearAndInvalidateScheduledDanmakus();
   }
 
   @override
@@ -1615,7 +1656,10 @@ class _PlayerItemState extends State<PlayerItem>
                       actions: keyboardActions,
                       longPressActions: keyboardLongPressActions,
                       shouldHandleAction: _shouldHandleTvRemoteAction,
-                      isBlocked: () => _openPlayerMenuCount > 0,
+                      onNavigationKey: _handleVisibleTvNavigationKey,
+                      isBlocked: () =>
+                          _openPlayerMenuCount > 0 ||
+                          videoPageController.showTabBody,
                     ),
                     Center(
                       key: _videoSurfaceKey,

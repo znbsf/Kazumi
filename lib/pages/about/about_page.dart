@@ -211,7 +211,9 @@ class _AboutPageState extends State<AboutPage> {
                         mode: LaunchMode.externalApplication);
                   },
                   title: Text('弹幕来源'),
-                  description: Text('ID: ${dandanCredentials['id']}'),
+                  description: Text(hasDandanCredentials
+                      ? 'ID: ${dandanCredentials['id']}'
+                      : '当前构建未配置 API 凭证'),
                   value: Text('弹弹play开放平台'),
                 ),
               ],

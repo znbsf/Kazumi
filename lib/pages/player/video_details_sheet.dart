@@ -319,6 +319,11 @@ class _VideoDetailsSheetState extends State<VideoDetailsSheet>
                   '播放健康',
                   diagnostics?.playbackHealthSummary ?? '正在读取…',
                 ),
+                _statusTile(
+                  Icons.sync_rounded,
+                  '音频与同步',
+                  diagnostics?.audioClockSummary ?? '正在读取…',
+                ),
               ],
             ),
           SettingsSection(

@@ -14,6 +14,7 @@ import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/network/proxy_utils.dart';
 import 'package:kazumi/services/network/system_proxy_service.dart';
 import 'package:kazumi/services/player/playback_cache_policy.dart';
+import 'package:kazumi/services/player/android_video_output.dart';
 import 'package:kazumi/services/player/player_error_mapper.dart';
 import 'package:kazumi/services/player/player_screenshot_service.dart';
 import 'package:kazumi/services/storage/storage.dart';
@@ -25,6 +26,7 @@ import 'package:mobx/mobx.dart';
 import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/utils/media.dart';
 import 'package:kazumi/services/platform/platform_environment_service.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 part 'player_playback_controller.g.dart';
 
@@ -99,6 +101,15 @@ abstract class _PlayerPlaybackController with Store {
     'video-params/pixelformat',
     'video-params/hw-pixelformat',
     'estimated-vf-fps',
+    'current-ao',
+    'audio-params/samplerate',
+    'audio-out-params/samplerate',
+    'avsync',
+    'audio-delay',
+    'total-avsync-change',
+    'mistimed-frame-count',
+    'vo-delayed-frame-count',
+    'vsync-ratio',
     'demuxer-cache-duration',
     'frame-drop-count',
     'decoder-frame-drop-count',
@@ -431,14 +442,13 @@ abstract class _PlayerPlaybackController with Store {
           if (!isCurrentPlayer(player)) {
             return await _discardIfNotCurrent(candidate);
           }
-          if (androidSdkVersion >= 34) {
-            videoRenderer = 'gpu-next';
-          } else {
-            videoRenderer = 'gpu';
-          }
-        } else {
-          videoRenderer = androidVideoRenderer;
+          videoRenderer = selectAndroidVideoOutput(
+            configuredOutput: androidVideoRenderer,
+            isTv: TvMode.enabled,
+            androidSdkVersion: androidSdkVersion,
+          );
         }
+        videoRenderer ??= androidVideoRenderer;
       }
 
       if (videoRenderer == 'mediacodec_embed') {

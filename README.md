@@ -34,10 +34,12 @@
 | 首页节目号 | TV 首页按从左到右、从上到下的顺序显示编号；数字键支持 1–999 直达、高亮预览、自动滚动和 1.8 秒多位输入等待；查找最多额外加载 5 页或 10 秒 |
 | 顶部分类 | TV 利用横向空间平铺“热门番组/日常/原创…”；左右移动时焦点放大突出，停留后刷新下方番剧 |
 | 初始化与来源 | 保留首次初始化、规则目录、规则安装、详情、播放源和选集流程 |
-| 播放器 | 播放/暂停、快进快退、上下集、选集、收藏、弹幕、详情、返回和退出均可由遥控器操作 |
+| 播放器 | 播放/暂停、快进快退、上下集、选集、收藏、弹幕、详情、返回和退出均可由遥控器操作；控制层上下左右使用显式焦点拓扑，不会误把方向键当成 seek |
+| TV 播放 UI | 初始选集面板缩为半透明四列卡片；当前集与遥控器焦点分别可见；顶栏、底栏控件都有高亮描边并可跨行连续导航 |
 | 遥控器与操作设置 | TV 侧栏“遥控器”作为快捷入口；页面横向切换固定遥控器说明与可编辑的播放器通用按键，避免两套说明重复维护 |
 | 播放信息 | `INFO` 可查看实际解码通路、视频输出、GPU context、编码、像素格式、帧率、缓存和丢帧 |
-| 硬件解码 | Android 默认使用 `auto-safe`；支持 MediaCodec、`gpu/gpu-next` 以及手动选择 `mediacodec_embed` |
+| 硬件解码 | TV 的“自动”默认走 `mediacodec_embed` 直连 Surface；显式选择 `gpu/gpu-next` 仍被保留，手机版默认逻辑不变 |
+| 弹幕 | 凭证缺失时在请求前给出明确提示；时间轴支持慢速去重、短跨度追帧和 seek/暂停后的旧任务失效 |
 | 手机兼容 | 手机版继续使用原包名和手机布局；TV 专属诊断、遥控器帮助和焦点行为不会改变手机界面 |
 
 更完整的阶段边界、验证记录和第二阶段计划见
@@ -80,12 +82,33 @@
 - `current-vo` / `current-gpu-context`：当前渲染器和 GPU context；
 - 视频编码、像素格式、估算帧率、缓存时长和两类丢帧计数。
 
-当前 Google TV AVD 的在线播放验证读到 `mediacodec-copy + gpu-next + android`。这能
-证明 MediaCodec 通路已经接入，但模拟器结果不能替代实体电视芯片上的 4K/HDR、功耗、
-解码器组件和长时间播放验证。
+同一 1080p 视频在已完成的实体电视 A/B 诊断中，旧的
+`mediacodec-copy + gpu` SurfaceTexture 路径只有约 `0.871x–0.915x`；TV“自动”改为
+`mediacodec_embed` 直连 Android Surface 后，实测约 `0.99990x–0.99998x`、输出丢帧为
+`0`，A/V 差约 `0.02 ms`。低码率 480p 在旧路径本来就约 `1.00075x`，所以这不是把
+所有卡顿都归因于同一个播放源，而是针对高分辨率路径的选择。
 
-`mediacodec_embed` 是功耗优先的手动选项，但它不支持 Anime4K 超分辨率，并会限制
-部分 mpv 视频滤镜和 OSD 合成能力，因此没有被强制设为 TV 默认值。
+`mediacodec_embed` 不支持 Anime4K 超分辨率，并会限制部分 mpv 视频滤镜/OSD 合成；
+因此启用直连输出时会禁用不兼容的超分辨率。用户显式选择 `gpu` / `gpu-next` 时仍尊重
+该设置，手机版的自动渲染器选择也不改变。模拟器只能验证配置、播放和 UI 路径，不能
+替代实体电视芯片上的 4K/HDR、功耗和长时间稳定性结论；本轮验收按用户要求只使用 AVD。
+
+## 弹幕凭证与同步
+
+弹弹 play 开放平台要求客户端请求携带 AppId、时间戳和签名。开源仓库不会提交任何
+第三方密钥；未提供凭证的本地构建会在发出网络请求前显示“当前构建未配置弹幕服务凭证”，
+而不是发送空签名后只得到 HTTP 403。
+
+需要在线弹幕时，请使用自己申请的凭证构建：
+
+```powershell
+flutter build apk --release --flavor tv `
+  --dart-define=DANDANAPI_APPID=你的_AppId `
+  --dart-define=DANDANAPI_KEY=你的_AppSecret
+```
+
+播放器弹幕时间轴会对同一媒体秒去重，短暂卡顿或较快播放造成的 1–3 秒跨度会补齐；
+大幅 seek、倒退、暂停和重新载入会使旧的延迟任务失效，避免旧弹幕在新时间点冒出。
 
 ## 构建 TV 与手机版
 
@@ -142,10 +165,14 @@ flutter build apk --debug --flavor tv
   <tr>
     <td><img alt="Kazumi TV 带节目号的首页" src="static/screenshot/tv_home.png"></td>
     <td><img alt="Kazumi TV 遥控器与操作设置" src="static/screenshot/tv_remote_help.png"></td>
+  </tr>
   <tr>
+    <td><img alt="Kazumi TV 半透明四列选集面板" src="static/screenshot/tv_player_episodes.png"></td>
+    <td><img alt="Kazumi TV 播放器控件焦点描边" src="static/screenshot/tv_player_controls.png"></td>
+  </tr>
 </table>
 
-> 截图来自 1920×1080 Google TV API 36 AVD 的 TV Release 构建；不代表实体电视的解码性能。
+> 截图来自 1920×1080 Google TV API 36 AVD 的当前 TV 构建；不代表实体电视的解码性能。
 
 ## 功能 / 开发计划
 

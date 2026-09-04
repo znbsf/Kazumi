@@ -12,6 +12,15 @@ void main() {
         'video-params/pixelformat': 'nv12',
         'video-params/hw-pixelformat': 'mediacodec',
         'estimated-vf-fps': '23.976',
+        'current-ao': 'audiotrack',
+        'audio-params/samplerate': '44100',
+        'audio-out-params/samplerate': '48000',
+        'avsync': '-0.0125',
+        'audio-delay': '0',
+        'total-avsync-change': '0.004',
+        'mistimed-frame-count': '2',
+        'vo-delayed-frame-count': '3',
+        'vsync-ratio': '1.0001',
         'demuxer-cache-duration': '12.5',
         'frame-drop-count': '0',
         'decoder-frame-drop-count': '1',
@@ -32,6 +41,13 @@ void main() {
     expect(snapshot.streamSummary, contains('h264 High'));
     expect(snapshot.streamSummary, contains('23.98 fps'));
     expect(snapshot.playbackHealthSummary, contains('解码丢帧 1'));
+    expect(snapshot.playbackHealthSummary, contains('误时 2'));
+    expect(snapshot.playbackHealthSummary, contains('延迟 3'));
+    expect(snapshot.audioClockSummary, contains('audiotrack'));
+    expect(snapshot.audioClockSummary, contains('输入 44100 Hz'));
+    expect(snapshot.audioClockSummary, contains('输出 48000 Hz'));
+    expect(snapshot.audioClockSummary, contains('A/V -12.5 ms'));
+    expect(snapshot.audioClockSummary, contains('VSync 1.0001'));
     expect(snapshot.audioCodec, 'aac');
   });
 
