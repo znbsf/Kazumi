@@ -31,8 +31,11 @@
 | 独立安装 | `mobile` 与 `tv` 两个 product flavor；TV 包名为 `com.znbsf.kazumi.tv`，可与手机版共存 |
 | TV 入口 | Leanback launcher、TV banner、非必需触摸屏声明和横屏窗口 |
 | 十英尺界面 | 首页、时间表、追番、历史、设置和播放页支持 D-pad 焦点与确认键，沿用原有配色和卡片样式 |
+| 首页节目号 | TV 首页按从左到右、从上到下的顺序显示编号；数字键支持 1–999 直达、高亮预览、自动滚动和 1.8 秒多位输入等待；查找最多额外加载 5 页或 10 秒 |
+| 顶部分类 | TV 利用横向空间平铺“热门番组/日常/原创…”；左右移动时焦点放大突出，停留后刷新下方番剧 |
 | 初始化与来源 | 保留首次初始化、规则目录、规则安装、详情、播放源和选集流程 |
 | 播放器 | 播放/暂停、快进快退、上下集、选集、收藏、弹幕、详情、返回和退出均可由遥控器操作 |
+| 按键帮助 | TV 侧栏新增“遥控器”页面，集中展示首页选台、导航、播放器和系统键映射 |
 | 播放信息 | `INFO` 可查看实际解码通路、视频输出、GPU context、编码、像素格式、帧率、缓存和丢帧 |
 | 硬件解码 | Android 默认使用 `auto-safe`；支持 MediaCodec、`gpu/gpu-next` 以及手动选择 `mediacodec_embed` |
 | 手机兼容 | 手机版继续使用原包名和手机布局；TV 专属诊断、遥控器帮助和焦点行为不会改变手机界面 |
@@ -43,8 +46,10 @@
 
 ## TV 遥控器键位
 
-| 遥控器按键 | 播放器动作 |
+| 遥控器按键 | 动作 |
 | --- | --- |
+| 0–9 数字键（TV 首页） | 输入 1–3 位节目号；立即高亮匹配卡片，每次输入后等待 1.8 秒进入，也可按 OK 立即进入 |
+| Back（数字查找中） | 取消当前查找；切换其他主页栏目也会自动取消 |
 | D-pad / OK | 控制层隐藏时显示控制层；显示后进行焦点导航和确认 |
 | Play / Pause | 播放、暂停或切换状态 |
 | Fast Forward / Rewind | 快进、快退 |
@@ -60,6 +65,10 @@
 
 部分电视会在应用收到事件前拦截 EPG、音量等系统保留键。Kazumi TV 会处理设备实际
 下发给应用的标准键，同时提供黄键、Top Menu 等兼容入口。
+
+数字直达不会无限翻页：找到目标、数据源返回空页、额外加载 5 页、等待
+10 秒或用户取消，任一条件到达就停止。只有数据源明确到末尾才提示“没有该编号”；
+超过页数/时间上限会提示“暂未加载到”。
 
 ## 硬件解码状态
 
@@ -91,10 +100,14 @@ flutter build apk --debug --flavor tv
 flutter build apk --debug --flavor mobile
 ```
 
-构建产物：
+带品牌和版本的 Gradle 产物：
 
-- `build/app/outputs/flutter-apk/app-tv-debug.apk`
-- `build/app/outputs/flutter-apk/app-mobile-debug.apk`
+- `build/app/outputs/apk/tv/debug/Kazumi-TV-<version>-debug.apk`
+- `build/app/outputs/apk/mobile/debug/Kazumi-Mobile-<version>-debug.apk`
+
+版本号来自 `pubspec.yaml`；Flutter 还会在 `build/app/outputs/flutter-apk/`
+保留 `app-tv-debug.apk` / `app-mobile-debug.apk` 兼容副本。GitHub 发行包使用
+`Kazumi-TV-<tag>-arm64-v8a.apk` 和 `Kazumi-Mobile-<tag>-arm64-v8a.apk`，避免两个 APK 混淆。
 
 如果 TV AVD 无法直接访问网络，可在开发时显式复用宿主机代理：
 
@@ -127,16 +140,12 @@ flutter build apk --debug --flavor tv
 
 <table>
   <tr>
-    <td><img alt="homepage" src="static/screenshot/img_1.png"></td>
-    <td><img alt="timetable" src="static/screenshot/img_2.png"></td>
-    <td><img alt="details" src="static/screenshot/img_3.png"></td>
-  <tr>
-  <tr>
-    <td><img alt="selection-page" src="static/screenshot/img_4.png"></td>
-    <td><img alt="rules-mange" src="static/screenshot/img_5.png"></td>
-    <td><img alt="rules-edit" src="static/screenshot/img_6.png"></td>
+    <td><img alt="Kazumi TV 带节目号的首页" src="static/screenshot/tv_home.png"></td>
+    <td><img alt="Kazumi TV 遥控器按键对照表" src="static/screenshot/tv_remote_help.png"></td>
   <tr>
 </table>
+
+> 截图来自 1920×1080 Google TV API 36 AVD 的 TV Release 构建；不代表实体电视的解码性能。
 
 ## 功能 / 开发计划
 
@@ -163,6 +172,11 @@ flutter build apk --debug --flavor tv
 - [X]  超分辨率
 - [X]  一起看
 - [X]  番剧下载
+- [X]  TV 首页节目号和数字键直达
+- [X]  TV 首页横向分类栏和焦点联动
+- [X]  TV 遥控器按键对照页
+- [ ]  卡片展示日本实际播出电视台台标（待确定节目映射、台标授权和更新数据源）
+- [ ]  手机与 TV 发现、配对和按节目/来源/集数/时间点接力播放
 - [ ]  番剧更新提醒
 - [ ]  还有更多 (/・ω・＼)
 

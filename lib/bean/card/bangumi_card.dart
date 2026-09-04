@@ -14,11 +14,19 @@ class BangumiCardV extends StatelessWidget {
     required this.bangumiItem,
     this.canTap = true,
     this.enableHero = true,
+    this.channelNumber,
+    this.highlighted = false,
+    this.focusNode,
+    this.onPressed,
   });
 
   final BangumiItem bangumiItem;
   final bool canTap;
   final bool enableHero;
+  final int? channelNumber;
+  final bool highlighted;
+  final FocusNode? focusNode;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +37,11 @@ class BangumiCardV extends StatelessWidget {
         );
         return;
       }
-      context.pushNamed('/info/', arguments: bangumiItem);
+      if (onPressed != null) {
+        onPressed!();
+      } else {
+        context.pushNamed('/info/', arguments: bangumiItem);
+      }
     }
 
     final card = Card(
@@ -48,23 +60,32 @@ class BangumiCardV extends StatelessWidget {
                 child: LayoutBuilder(builder: (context, boxConstraints) {
                   final double maxWidth = boxConstraints.maxWidth;
                   final double maxHeight = boxConstraints.maxHeight;
-                  return enableHero
+                  final image = NetworkImgLayer(
+                    src: bangumiItem.images['large'] ?? '',
+                    width: maxWidth,
+                    height: maxHeight,
+                  );
+                  final poster = enableHero
                       ? Hero(
                           transitionOnUserGestures: true,
                           flightShuttleBuilder:
                               NetworkImgLayer.heroFlightShuttleBuilder,
                           tag: bangumiItem.id,
-                          child: NetworkImgLayer(
-                            src: bangumiItem.images['large'] ?? '',
-                            width: maxWidth,
-                            height: maxHeight,
-                          ),
+                          child: image,
                         )
-                      : NetworkImgLayer(
-                          src: bangumiItem.images['large'] ?? '',
-                          width: maxWidth,
-                          height: maxHeight,
-                        );
+                      : image;
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      poster,
+                      if (channelNumber != null)
+                        Positioned(
+                          left: 8,
+                          top: 8,
+                          child: _ChannelNumberBadge(number: channelNumber!),
+                        ),
+                    ],
+                  );
                 }),
               ),
               BangumiContent(bangumiItem: bangumiItem)
@@ -75,7 +96,45 @@ class BangumiCardV extends StatelessWidget {
     );
     return TvFocusableSurface(
       onPressed: openBangumi,
+      focusNode: focusNode,
+      highlighted: highlighted,
       child: card,
+    );
+  }
+}
+
+class _ChannelNumberBadge extends StatelessWidget {
+  const _ChannelNumberBadge({required this.number});
+
+  final int number;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Semantics(
+      label: '$number 号节目',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colorScheme.surface.withValues(alpha: 0.88),
+          borderRadius: BorderRadius.circular(7),
+          border: Border.all(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+          ),
+          boxShadow: const [
+            BoxShadow(color: Colors.black38, blurRadius: 4),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Text(
+            number.toString(),
+            style: TextStyle(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

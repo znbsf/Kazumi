@@ -12,6 +12,9 @@ class TvFocusableSurface extends StatefulWidget {
     this.autofocus = false,
     this.focusNode,
     this.borderRadius = 16,
+    this.highlighted = false,
+    this.onFocusChange,
+    this.onKeyEvent,
   });
 
   final Widget child;
@@ -20,6 +23,9 @@ class TvFocusableSurface extends StatefulWidget {
   final bool autofocus;
   final FocusNode? focusNode;
   final double borderRadius;
+  final bool highlighted;
+  final ValueChanged<bool>? onFocusChange;
+  final FocusOnKeyEventCallback? onKeyEvent;
 
   @override
   State<TvFocusableSurface> createState() => _TvFocusableSurfaceState();
@@ -45,9 +51,14 @@ class _TvFocusableSurfaceState extends State<TvFocusableSurface> {
         );
       });
     }
+    widget.onFocusChange?.call(focused);
   }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    final customResult = widget.onKeyEvent?.call(node, event);
+    if (customResult != null && customResult != KeyEventResult.ignored) {
+      return customResult;
+    }
     if (event is! KeyDownEvent) {
       return KeyEventResult.ignored;
     }
@@ -69,6 +80,7 @@ class _TvFocusableSurfaceState extends State<TvFocusableSurface> {
     }
 
     final colorScheme = Theme.of(context).colorScheme;
+    final visuallyHighlighted = _focused || widget.highlighted;
     return Semantics(
       button: true,
       child: Focus(
@@ -77,7 +89,7 @@ class _TvFocusableSurfaceState extends State<TvFocusableSurface> {
         onFocusChange: _handleFocusChange,
         onKeyEvent: _handleKeyEvent,
         child: AnimatedScale(
-          scale: _focused ? 1.035 : 1,
+          scale: visuallyHighlighted ? 1.035 : 1,
           duration: const Duration(milliseconds: 140),
           curve: Curves.easeOut,
           child: AnimatedContainer(
@@ -87,10 +99,12 @@ class _TvFocusableSurfaceState extends State<TvFocusableSurface> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(widget.borderRadius + 2),
               border: Border.all(
-                color: _focused ? colorScheme.primary : Colors.transparent,
+                color: visuallyHighlighted
+                    ? colorScheme.primary
+                    : Colors.transparent,
                 width: 3,
               ),
-              boxShadow: _focused
+              boxShadow: visuallyHighlighted
                   ? [
                       BoxShadow(
                         color: colorScheme.primary.withValues(alpha: 0.28),

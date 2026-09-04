@@ -7,6 +7,7 @@ import 'package:kazumi/navigation.dart';
 import 'package:kazumi/pages/menu/route_visibility.dart';
 import 'package:kazumi/pages/router.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
+import 'package:kazumi/services/platform/tv_channel_input.dart';
 
 class ScaffoldMenu extends StatefulWidget {
   const ScaffoldMenu({super.key});
@@ -66,6 +67,9 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
     if (!mounted || _isCovered == value) {
       return;
     }
+    if (value) {
+      tvChannelInputController.cancel();
+    }
     setState(() => _isCovered = value);
   }
 
@@ -75,6 +79,9 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
         menu.indexForPath(context.routeState(listen: false).uri.path);
     if (index == currentIndex) {
       return;
+    }
+    if (index != 0) {
+      tvChannelInputController.cancel();
     }
     _outletKey.currentState?.navigate('/tab${menu.getPath(index)}/');
   }
@@ -87,6 +94,10 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
 
     final currentIndex =
         menu.indexForPath(context.routeState(listen: false).uri.path);
+    if (currentIndex == 0 && tvChannelInputController.value != null) {
+      tvChannelInputController.cancel();
+      return;
+    }
     if (currentIndex != 0) {
       _selectDestination(0);
       return;
@@ -105,24 +116,43 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
     SystemNavigator.pop();
   }
 
+  KeyEventResult _handleTvNumberKey(FocusNode node, KeyEvent event) {
+    if (!TvMode.enabled ||
+        _isCovered ||
+        event is! KeyDownEvent ||
+        menu.indexForPath(context.routeState(listen: false).uri.path) != 0) {
+      return KeyEventResult.ignored;
+    }
+    final digit = tvDigitForLogicalKey(event.logicalKey);
+    if (digit == null) {
+      return KeyEventResult.ignored;
+    }
+    tvChannelInputController.addDigit(digit);
+    return KeyEventResult.handled;
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedIndex = menu.indexForPath(context.routeState().uri.path);
     return RouteVisibility(
       isCovered: _isCovered,
-      child: PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) {
-            _handleSystemBack(context);
-          }
-        },
-        child: OrientationBuilder(
-          builder: (context, orientation) {
-            return orientation == Orientation.portrait && !TvMode.enabled
-                ? _bottomMenu(context, selectedIndex)
-                : _sideMenu(context, selectedIndex);
+      child: Focus(
+        canRequestFocus: false,
+        onKeyEvent: _handleTvNumberKey,
+        child: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, _) {
+            if (!didPop) {
+              _handleSystemBack(context);
+            }
           },
+          child: OrientationBuilder(
+            builder: (context, orientation) {
+              return orientation == Orientation.portrait && !TvMode.enabled
+                  ? _bottomMenu(context, selectedIndex)
+                  : _sideMenu(context, selectedIndex);
+            },
+          ),
         ),
       ),
     );
@@ -200,27 +230,33 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
                 child: const Icon(Icons.search),
               ),
               labelType: NavigationRailLabelType.selected,
-              destinations: const <NavigationRailDestination>[
-                NavigationRailDestination(
+              destinations: <NavigationRailDestination>[
+                const NavigationRailDestination(
                   selectedIcon: Icon(Icons.home),
                   icon: Icon(Icons.home_outlined),
                   label: Text('推荐'),
                 ),
-                NavigationRailDestination(
+                const NavigationRailDestination(
                   selectedIcon: Icon(Icons.timeline),
                   icon: Icon(Icons.timeline_outlined),
                   label: Text('时间表'),
                 ),
-                NavigationRailDestination(
+                const NavigationRailDestination(
                   selectedIcon: Icon(Icons.favorite),
                   icon: Icon(Icons.favorite_border),
                   label: Text('追番'),
                 ),
-                NavigationRailDestination(
+                const NavigationRailDestination(
                   selectedIcon: Icon(Icons.settings),
                   icon: Icon(Icons.settings_outlined),
                   label: Text('我的'),
                 ),
+                if (TvMode.enabled)
+                  const NavigationRailDestination(
+                    selectedIcon: Icon(Icons.gamepad_rounded),
+                    icon: Icon(Icons.gamepad_outlined),
+                    label: Text('遥控器'),
+                  ),
               ],
               selectedIndex: selectedIndex,
               onDestinationSelected: _selectDestination,

@@ -48,4 +48,50 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets('number selection can highlight a TV surface before focus',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TvFocusableSurface(
+            enabled: true,
+            highlighted: true,
+            onPressed: () {},
+            child: const SizedBox(width: 120, height: 80),
+          ),
+        ),
+      ),
+    );
+
+    final decoration = tester.widget<AnimatedContainer>(
+      find.descendant(
+        of: find.byType(TvFocusableSurface),
+        matching: find.byType(AnimatedContainer),
+      ),
+    );
+    final box = decoration.decoration! as BoxDecoration;
+    expect((box.border! as Border).top.color, isNot(Colors.transparent));
+  });
+
+  testWidgets('TV surface reports focus changes for horizontal category tabs',
+      (tester) async {
+    final changes = <bool>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TvFocusableSurface(
+            enabled: true,
+            autofocus: true,
+            onFocusChange: changes.add,
+            onPressed: () {},
+            child: const SizedBox(width: 120, height: 80),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(changes, contains(true));
+  });
 }

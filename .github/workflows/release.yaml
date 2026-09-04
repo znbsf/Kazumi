@@ -101,7 +101,7 @@
               --dart-define=KAZUMI_KEY=$KAZUMI_KEY
             shell: bash
           - name: Package Android mobile output
-            run: cp build/app/outputs/flutter-apk/app-arm64-v8a-mobile-release.apk Kazumi_android_mobile_${tag}.apk
+            run: cp build/app/outputs/apk/mobile/release/Kazumi-Mobile-*-arm64-v8a-release.apk Kazumi-Mobile-${tag}-arm64-v8a.apk
             shell: bash
           - name: Build Flutter for Android TV
             run: >-
@@ -112,14 +112,14 @@
               --dart-define=KAZUMI_KEY=$KAZUMI_KEY
             shell: bash
           - name: Package Android TV output
-            run: cp build/app/outputs/flutter-apk/app-arm64-v8a-tv-release.apk Kazumi_android_tv_${tag}.apk
+            run: cp build/app/outputs/apk/tv/release/Kazumi-TV-*-arm64-v8a-release.apk Kazumi-TV-${tag}-arm64-v8a.apk
             shell: bash
 
           - name: Upload android outputs
             uses: actions/upload-artifact@v4
             with:
               name: android_outputs
-              path: Kazumi_android_*.apk
+              path: Kazumi-*.apk
 
       flutter-build-windows:
         name: "Release for windows"
