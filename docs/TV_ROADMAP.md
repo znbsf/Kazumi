@@ -39,6 +39,15 @@ flutter build apk --debug --flavor tv
 Android Studio 的 Build Variants 中选择 `mobileDebug` 或 `tvDebug`；运行目标分别
 使用手机 AVD 或 Google TV AVD。
 
+如果 Android 模拟器需要复用宿主机 HTTP 代理，可只为 Debug 构建显式传入代理地址：
+
+```powershell
+flutter build apk --debug --flavor tv --dart-define=KAZUMI_DEV_PROXY=10.0.2.2:10646
+```
+
+其中 `10.0.2.2` 是 Android Emulator 访问宿主机的地址。该参数在 Release 构建中
+不会生效；未传入时也不会改变用户已有的代理设置。
+
 ### 范围
 
 - 同一仓库分别产出手机 APK 与 TV APK，不再把两类启动入口合并到一个安装包。
@@ -83,12 +92,14 @@ Android Studio 的 Build Variants 中选择 `mobileDebug` 或 `tvDebug`；运行
 - 独立 TV 包在 `Kazumi_TV_API_36` 冷启动并仅用确认键完成引导进入搜索；独立 mobile
   包在 `Medium_Phone_API_35` 冷启动并保持 1080×2400 竖屏。两个包没有复用彼此的
   Application ID 或启动入口。
+- TV Debug 构建通过显式的 `KAZUMI_DEV_PROXY=10.0.2.2:10646` 连接宿主机 HTTP
+  代理；规则目录请求返回 HTTP 200，首次引导的“添加规则”页实际显示 `moonci`、
+  `mutefun` 等在线来源和安装按钮。
 
 仍待确认：
 
-- 当前 AVD 网络无法连接规则目录和 Bangumi API，日志为 12 秒连接超时；因此详情→
-  来源→真实视频播放的在线完整路径没有被误记为通过。需要在网络可用的 TV AVD 或
-  真实设备补测。
+- 当前 AVD 的直连网络仍不可用，需要显式复用宿主机代理；规则目录已验证，但详情→
+  来源→真实视频播放的在线完整路径尚未完成，因此没有被误记为通过。
 - 真实电视/盒子的遥控器键码、解码能力、焦点观感和长时间播放尚未验证。
 
 ### 第一阶段非目标

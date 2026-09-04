@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kazumi/app_module.dart';
 import 'package:kazumi/app_widget.dart';
@@ -9,6 +10,7 @@ import 'package:kazumi/services/storage/storage.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:kazumi/services/network/metered_network_service.dart';
 import 'package:kazumi/services/network/proxy_manager.dart';
+import 'package:kazumi/services/network/proxy_utils.dart';
 import 'package:kazumi/services/network/system_proxy_service.dart';
 import 'package:flutter/services.dart';
 import 'package:media_kit/media_kit.dart';
@@ -50,6 +52,7 @@ void main() async {
     final hivePath = '${(await getApplicationSupportDirectory()).path}/hive';
     await Hive.initFlutter(hivePath);
     await GStorage.init();
+    await _applyDevelopmentProxyOverride();
   } catch (e) {
     // Log the error for debugging (if logger is available)
     debugPrint('Storage initialization failed: $e');
@@ -115,4 +118,21 @@ void main() async {
       child: const AppWidget(),
     ),
   );
+}
+
+Future<void> _applyDevelopmentProxyOverride() async {
+  const proxyUrl = String.fromEnvironment('KAZUMI_DEV_PROXY');
+  if (!kDebugMode || proxyUrl.isEmpty) {
+    return;
+  }
+
+  if (!ProxyUtils.isValidProxyUrl(proxyUrl)) {
+    debugPrint('Ignoring invalid KAZUMI_DEV_PROXY value.');
+    return;
+  }
+
+  await GStorage.putSetting(SettingsKeys.proxyUrl, proxyUrl);
+  await GStorage.putSetting(SettingsKeys.proxyConfigured, true);
+  await GStorage.putSetting(SettingsKeys.proxyEnable, true);
+  debugPrint('Development proxy enabled for this debug build.');
 }
