@@ -19,6 +19,8 @@ import android.net.Uri
 import android.app.PictureInPictureParams
 import android.graphics.drawable.Icon
 import android.util.Rational
+import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import androidx.annotation.NonNull
 import androidx.core.content.ContextCompat
@@ -35,8 +37,11 @@ class MainActivity: AudioServiceActivity() {
     private val CHANNEL = "com.predidit.kazumi/intent"
     private val STORAGE_CHANNEL = "com.predidit.kazumi/storage"
     private val PIP_CHANNEL = "com.predidit.kazumi/pip"
+    private val TV_REMOTE_CHANNEL = "com.predidit.kazumi/tv_remote"
     private var intentChannel: MethodChannel? = null
     private var pipChannel: MethodChannel? = null
+    private var tvRemoteChannel: MethodChannel? = null
+    private var tvRemotePlayerActive = false
 
     private var pipIsPlaying = false
     private var pipDanmakuEnabled = false
@@ -90,6 +95,25 @@ class MainActivity: AudioServiceActivity() {
         if (hasFocus && androidFullscreen) {
             applySystemBarsState()
         }
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (BuildConfig.DEBUG && isTelevision() && event.action == KeyEvent.ACTION_DOWN) {
+            Log.d(
+                "KazumiTvRemote",
+                "key=${event.keyCode} active=$tvRemotePlayerActive action=${tvRemoteAction(event.keyCode)}",
+            )
+        }
+        if (tvRemotePlayerActive && isTelevision()) {
+            val action = tvRemoteAction(event.keyCode)
+            if (action != null) {
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    tvRemoteChannel?.invokeMethod("dispatch", action)
+                }
+                return true
+            }
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -177,6 +201,40 @@ class MainActivity: AudioServiceActivity() {
             } else {
                 result.notImplemented()
             }
+        }
+
+        tvRemoteChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            TV_REMOTE_CHANNEL,
+        )
+        tvRemoteChannel?.setMethodCallHandler { call, result ->
+            if (call.method == "setPlayerActive") {
+                tvRemotePlayerActive = call.argument<Boolean>("active") ?: false
+                if (BuildConfig.DEBUG) {
+                    Log.d("KazumiTvRemote", "playerActive=$tvRemotePlayerActive")
+                }
+                result.success(null)
+            } else {
+                result.notImplemented()
+            }
+        }
+    }
+
+    private fun tvRemoteAction(keyCode: Int): String? {
+        return when (keyCode) {
+            KeyEvent.KEYCODE_GUIDE,
+            KeyEvent.KEYCODE_MEDIA_TOP_MENU,
+            KeyEvent.KEYCODE_PROG_YELLOW -> "showepisodes"
+            KeyEvent.KEYCODE_CAPTIONS,
+            KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK,
+            KeyEvent.KEYCODE_PROG_RED -> "toggledanmaku"
+            KeyEvent.KEYCODE_BOOKMARK,
+            KeyEvent.KEYCODE_PROG_GREEN -> "togglefavorite"
+            KeyEvent.KEYCODE_INFO,
+            KeyEvent.KEYCODE_PROG_BLUE -> "showdetails"
+            KeyEvent.KEYCODE_MEDIA_CLOSE,
+            KeyEvent.KEYCODE_MEDIA_STOP -> "exitplayer"
+            else -> null
         }
     }
 

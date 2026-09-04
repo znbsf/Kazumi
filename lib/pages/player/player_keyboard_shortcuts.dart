@@ -31,6 +31,7 @@ class PlayerKeyboardShortcuts extends StatefulWidget {
     required this.actions,
     this.longPressActions = const <String, PlayerLongPressShortcutActions>{},
     this.isBlocked,
+    this.shouldHandleAction,
     this.shortcuts,
   });
 
@@ -38,6 +39,8 @@ class PlayerKeyboardShortcuts extends StatefulWidget {
   final Map<String, PlayerShortcutAction> actions;
   final Map<String, PlayerLongPressShortcutActions> longPressActions;
   final bool Function()? isBlocked;
+  final bool Function(String actionName, LogicalKeyboardKey key)?
+      shouldHandleAction;
   final Map<String, List<String>>? shortcuts;
 
   @override
@@ -46,6 +49,9 @@ class PlayerKeyboardShortcuts extends StatefulWidget {
 }
 
 class _PlayerKeyboardShortcutsState extends State<PlayerKeyboardShortcuts> {
+  static const _tvRemoteChannel = MethodChannel(
+    'com.predidit.kazumi/tv_remote',
+  );
   late Map<String, List<String>> _shortcuts;
   final Map<LogicalKeyboardKey, PlayerLongPressShortcutActions>
       _activeLongPressKeys =
@@ -56,6 +62,13 @@ class _PlayerKeyboardShortcutsState extends State<PlayerKeyboardShortcuts> {
     super.initState();
     _shortcuts = widget.shortcuts ?? _loadShortcuts();
     FocusManager.instance.addEarlyKeyEventHandler(_handleKeyEvent);
+    if (TvMode.enabled) {
+      _tvRemoteChannel.setMethodCallHandler(_handleTvRemoteMethod);
+      unawaited(_tvRemoteChannel.invokeMethod<void>(
+        'setPlayerActive',
+        const {'active': true},
+      ));
+    }
   }
 
   @override
@@ -69,8 +82,25 @@ class _PlayerKeyboardShortcutsState extends State<PlayerKeyboardShortcuts> {
   @override
   void dispose() {
     FocusManager.instance.removeEarlyKeyEventHandler(_handleKeyEvent);
+    if (TvMode.enabled) {
+      _tvRemoteChannel.setMethodCallHandler(null);
+      unawaited(_tvRemoteChannel.invokeMethod<void>(
+        'setPlayerActive',
+        const {'active': false},
+      ));
+    }
     _releaseAllLongPressShortcuts();
     super.dispose();
+  }
+
+  Future<void> _handleTvRemoteMethod(MethodCall call) async {
+    if (call.method != 'dispatch' || call.arguments is! String) return;
+    final actionName = call.arguments as String;
+    if (widget.isBlocked?.call() ?? false) return;
+    final route = ModalRoute.of(context);
+    if (route != null && !route.isCurrent) return;
+    final action = widget.actions[actionName];
+    if (action != null) await _runAction(action);
   }
 
   Map<String, List<String>> _loadShortcuts() {
@@ -102,6 +132,10 @@ class _PlayerKeyboardShortcutsState extends State<PlayerKeyboardShortcuts> {
         : event.logicalKey.debugName ?? '';
     final actionName = _findActionName(keyLabel);
     if (actionName == null) {
+      return KeyEventResult.ignored;
+    }
+    if (!(widget.shouldHandleAction?.call(actionName, event.logicalKey) ??
+        true)) {
       return KeyEventResult.ignored;
     }
 
@@ -215,6 +249,7 @@ Map<String, List<String>> withTvRemoteShortcuts(
 
   result['volumeup']?.remove(label(LogicalKeyboardKey.arrowUp));
   result['volumedown']?.remove(label(LogicalKeyboardKey.arrowDown));
+  result['exitfullscreen']?.remove(label(LogicalKeyboardKey.escape));
 
   for (final key in [
     LogicalKeyboardKey.select,
@@ -227,9 +262,38 @@ Map<String, List<String>> withTvRemoteShortcuts(
     add('showcontrols', key);
   }
   add('playorpause', LogicalKeyboardKey.mediaPlayPause);
+  add('play', LogicalKeyboardKey.mediaPlay);
+  add('pause', LogicalKeyboardKey.mediaPause);
   add('forward', LogicalKeyboardKey.mediaFastForward);
+  add('forward', LogicalKeyboardKey.mediaSkipForward);
   add('rewind', LogicalKeyboardKey.mediaRewind);
+  add('rewind', LogicalKeyboardKey.mediaSkipBackward);
   add('next', LogicalKeyboardKey.mediaTrackNext);
+  add('next', LogicalKeyboardKey.channelUp);
   add('prev', LogicalKeyboardKey.mediaTrackPrevious);
+  add('prev', LogicalKeyboardKey.channelDown);
+  add('prev', LogicalKeyboardKey.mediaLast);
+  add('volumeup', LogicalKeyboardKey.audioVolumeUp);
+  add('volumedown', LogicalKeyboardKey.audioVolumeDown);
+  add('togglemute', LogicalKeyboardKey.audioVolumeMute);
+  add('showepisodes', LogicalKeyboardKey.guide);
+  add('showepisodes', LogicalKeyboardKey.mediaTopMenu);
+  add('showepisodes', LogicalKeyboardKey.colorF2Yellow);
+  add('toggledanmaku', LogicalKeyboardKey.closedCaptionToggle);
+  add('toggledanmaku', LogicalKeyboardKey.mediaAudioTrack);
+  add('toggledanmaku', LogicalKeyboardKey.colorF0Red);
+  add('togglefavorite', LogicalKeyboardKey.browserFavorites);
+  add('togglefavorite', LogicalKeyboardKey.favoriteStore0);
+  add('togglefavorite', LogicalKeyboardKey.colorF1Green);
+  add('showdetails', LogicalKeyboardKey.info);
+  add('showdetails', LogicalKeyboardKey.contextMenu);
+  add('showdetails', LogicalKeyboardKey.colorF3Blue);
+  add('back', LogicalKeyboardKey.goBack);
+  add('back', LogicalKeyboardKey.escape);
+  add('back', LogicalKeyboardKey.gameButtonB);
+  add('exitplayer', LogicalKeyboardKey.exit);
+  add('exitplayer', LogicalKeyboardKey.close);
+  add('exitplayer', LogicalKeyboardKey.mediaClose);
+  add('exitplayer', LogicalKeyboardKey.mediaStop);
   return result;
 }

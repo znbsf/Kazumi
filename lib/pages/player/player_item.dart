@@ -35,6 +35,7 @@ import 'package:kazumi/pages/player/controller/player_danmaku_controller.dart';
 import 'package:kazumi/pages/player/player_item_surface.dart';
 import 'package:mobx/mobx.dart' as mobx;
 import 'package:kazumi/pages/my/my_controller.dart';
+import 'package:kazumi/pages/collect/collect_controller.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:kazumi/services/player/audio_controller.dart';
 import 'package:kazumi/utils/device.dart';
@@ -48,9 +49,11 @@ class PlayerItem extends StatefulWidget {
     required this.videoPageController,
     required this.toggleMenu,
     required this.showMenuImmediately,
+    required this.showEpisodeGuide,
     required this.hideMenuImmediately,
     required this.changeEpisode,
     required this.onBackPressed,
+    required this.exitPlayer,
     required this.keyboardFocus,
     required this.sendDanmaku,
     required this.showDanmakuDestinationPickerAndSend,
@@ -62,10 +65,12 @@ class PlayerItem extends StatefulWidget {
   final VideoPageController videoPageController;
   final VoidCallback toggleMenu;
   final VoidCallback showMenuImmediately;
+  final VoidCallback showEpisodeGuide;
   final VoidCallback hideMenuImmediately;
   final Future<void> Function(int episode, {int currentRoad, int offset})
       changeEpisode;
   final void Function(BuildContext) onBackPressed;
+  final Future<void> Function() exitPlayer;
   final bool Function(String) sendDanmaku;
   final FocusNode keyboardFocus;
   final bool disableAnimations;
@@ -83,6 +88,7 @@ class _PlayerItemState extends State<PlayerItem>
       widget.videoPageController;
   final HistoryController historyController = inject<HistoryController>();
   final MyController myController = inject<MyController>();
+  final CollectController collectController = inject<CollectController>();
   AudioController get _audioController => playerController.audioController;
   late final Map<String, PlayerShortcutAction> keyboardActions;
   late final Map<String, PlayerLongPressShortcutActions>
@@ -361,6 +367,8 @@ class _PlayerItemState extends State<PlayerItem>
   void _initKeyboardActions() {
     keyboardActions = {
       'playorpause': () => playerController.playOrPause(),
+      'play': () => playerController.play(),
+      'pause': () => playerController.pause(),
       'forward': handleShortcutForwardDown,
       'rewind': handleShortcutRewind,
       'next': () => handlePreNextEpisode('next'),
@@ -379,6 +387,11 @@ class _PlayerItemState extends State<PlayerItem>
       'speedup': () => handleSpeedChange('up'),
       'speeddown': () => handleSpeedChange('down'),
       'showcontrols': _showTvControls,
+      'showepisodes': widget.showEpisodeGuide,
+      'togglefavorite': _toggleFavorite,
+      'showdetails': _showVideoDetails,
+      'back': () => widget.onBackPressed(context),
+      'exitplayer': widget.exitPlayer,
     };
     keyboardLongPressActions = {
       'forward': PlayerLongPressShortcutActions(
@@ -394,6 +407,41 @@ class _PlayerItemState extends State<PlayerItem>
       if (!mounted) return;
       FocusScope.of(context).nextFocus();
     });
+  }
+
+  bool _shouldHandleTvRemoteAction(
+    String actionName,
+    LogicalKeyboardKey key,
+  ) {
+    if (!TvMode.enabled) return true;
+    final isNavigationKey = key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.gameButtonA ||
+        key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight;
+    if (playerController.panel.showVideoController && isNavigationKey) {
+      return false;
+    }
+    return true;
+  }
+
+  void _showVideoDetails() {
+    showVideoDetailsSheet(context, playerController: playerController);
+  }
+
+  Future<void> _toggleFavorite() async {
+    final item = videoPageController.bangumiItem;
+    final wasCollected = collectController.getCollectType(item) != 0;
+    await collectController.addCollect(item, type: wasCollected ? 0 : 1);
+    if (!mounted) return;
+    setState(() {});
+    final isCollected = collectController.getCollectType(item) != 0;
+    if (isCollected != wasCollected) {
+      KazumiDialog.showToast(message: isCollected ? '已标记为在看' : '已取消追番');
+    }
   }
 
   void _initPlayerMenu() {
@@ -1556,10 +1604,8 @@ class _PlayerItemState extends State<PlayerItem>
                       focusScopeNode: widget.keyboardFocus,
                       actions: keyboardActions,
                       longPressActions: keyboardLongPressActions,
-                      isBlocked: () =>
-                          _openPlayerMenuCount > 0 ||
-                          (TvMode.enabled &&
-                              playerController.panel.showVideoController),
+                      shouldHandleAction: _shouldHandleTvRemoteAction,
+                      isBlocked: () => _openPlayerMenuCount > 0,
                     ),
                     Center(
                       key: _videoSurfaceKey,

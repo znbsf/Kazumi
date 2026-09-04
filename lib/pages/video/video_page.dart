@@ -130,7 +130,7 @@ class _VideoPageState extends State<VideoPage>
   /// picture state, and they arrive over different channels in either order, so
   /// it settles on both. A picture in picture window is not an orientation.
   void _syncFullscreenWithWindowShape() {
-    if (isDesktop() || videoPageController.isPip) {
+    if (isDesktop() || TvMode.enabled || videoPageController.isPip) {
       return;
     }
     final bool landscape = _windowIsLandscape;
@@ -372,6 +372,11 @@ class _VideoPageState extends State<VideoPage>
     menuJumpToCurrentEpisode();
   }
 
+  void _showEpisodeGuide() {
+    tabController.animateTo(0);
+    _openTabBodyAnimated();
+  }
+
   void _hideTabBodyImmediately() {
     _setTabBodyVisible(false, animated: false);
   }
@@ -463,15 +468,18 @@ class _VideoPageState extends State<VideoPage>
       await DisplayModeService.exitFullScreen();
       videoPageController.isFullscreen = false;
     }
-    if (_isClosing) {
-      return;
-    }
+    await exitPlayer();
+  }
+
+  Future<void> exitPlayer() async {
+    if (_isClosing) return;
     _isClosing = true;
-    playerController.beginShutdown();
-    if (!context.mounted) {
-      return;
+    if (videoPageController.isFullscreen) {
+      await DisplayModeService.exitFullScreen();
+      videoPageController.isFullscreen = false;
     }
-    context.pop();
+    playerController.beginShutdown();
+    if (mounted) context.pop();
   }
 
   void pauseForTimedShutdown() {
@@ -867,9 +875,11 @@ class _VideoPageState extends State<VideoPage>
                   videoPageController: videoPageController,
                   toggleMenu: _toggleTabBodyAnimated,
                   showMenuImmediately: _showTabBodyImmediately,
+                  showEpisodeGuide: _showEpisodeGuide,
                   hideMenuImmediately: _hideTabBodyImmediately,
                   changeEpisode: changeEpisode,
                   onBackPressed: onBackPressed,
+                  exitPlayer: exitPlayer,
                   keyboardFocus: keyboardFocus,
                   sendDanmaku: sendDanmaku,
                   disableAnimations: disableAnimations,

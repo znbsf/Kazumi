@@ -31,6 +31,19 @@ void main() {
       result['playorpause'],
       contains(_label(LogicalKeyboardKey.mediaPlayPause)),
     );
+    expect(result['showepisodes'], contains(_label(LogicalKeyboardKey.guide)));
+    expect(
+      result['toggledanmaku'],
+      contains(_label(LogicalKeyboardKey.closedCaptionToggle)),
+    );
+    expect(
+      result['togglefavorite'],
+      contains(_label(LogicalKeyboardKey.browserFavorites)),
+    );
+    expect(
+        result['volumeup'], contains(_label(LogicalKeyboardKey.audioVolumeUp)));
+    expect(result['back'], contains(_label(LogicalKeyboardKey.goBack)));
+    expect(result['exitplayer'], contains(_label(LogicalKeyboardKey.exit)));
 
     // The helper must not mutate the persisted user mapping it receives.
     expect(source['volumeup'], contains(_label(LogicalKeyboardKey.arrowUp)));
@@ -77,5 +90,46 @@ void main() {
 
     expect(showControlsCount, 1);
     expect(playPauseCount, 1);
+  });
+
+  testWidgets('visible TV controls receive OK instead of shortcut capture', (
+    tester,
+  ) async {
+    final focusScopeNode = FocusScopeNode();
+    addTearDown(focusScopeNode.dispose);
+    var shortcutCount = 0;
+    var buttonCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FocusScope(
+          node: focusScopeNode,
+          child: Column(
+            children: [
+              PlayerKeyboardShortcuts(
+                focusScopeNode: focusScopeNode,
+                shortcuts: withTvRemoteShortcuts({
+                  'showcontrols': const <String>[],
+                }),
+                actions: {'showcontrols': () => shortcutCount += 1},
+                shouldHandleAction: (action, key) => action != 'showcontrols',
+              ),
+              ElevatedButton(
+                autofocus: true,
+                onPressed: () => buttonCount += 1,
+                child: const Text('播放'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+
+    expect(shortcutCount, 0);
+    expect(buttonCount, 1);
   });
 }
