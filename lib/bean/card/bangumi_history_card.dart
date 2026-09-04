@@ -11,6 +11,8 @@ import 'package:kazumi/services/plugin/rule_engine_models.dart'
     show RuleCancelToken;
 import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/utils/date_time.dart';
+import 'package:kazumi/bean/widget/tv_focusable_surface.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 String _historySourceText(String entryKind) {
   return HistoryEntryKind.normalize(entryKind) == HistoryEntryKind.offline
@@ -107,155 +109,159 @@ class _BangumiHistoryCardVState extends State<BangumiHistoryCardV> {
           color: colorScheme.onErrorContainer,
         ),
       ),
-      child: Card(
-        elevation: 0,
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        clipBehavior: Clip.antiAlias,
-        color: colorScheme.surfaceContainerLow,
-        child: InkWell(
-          onTap: _onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: NetworkImgLayer(
-                    src: widget.historyItem.bangumiItem.images['large'] ?? '',
-                    width: imageWidth,
-                    height: imageHeight,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: SizedBox(
-                    height: imageHeight,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.play_circle_outline,
-                              size: 14,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                episodeText,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.extension_outlined,
-                              size: 14,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 4),
-                            Flexible(
-                              child: Text(
-                                '$sourceText · ${widget.historyItem.adapterName}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.access_time,
-                              size: 12,
-                              color: colorScheme.outline,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              formatTimestampToRelativeTime(widget.historyItem
-                                      .lastWatchTime.millisecondsSinceEpoch ~/
-                                  1000),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: colorScheme.outline,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+      child: TvFocusableSurface(
+        onPressed: _onTap,
+        child: Card(
+          elevation: 0,
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          clipBehavior: Clip.antiAlias,
+          color: colorScheme.surfaceContainerLow,
+          child: InkWell(
+            canRequestFocus: !TvMode.enabled,
+            onTap: _onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: NetworkImgLayer(
+                      src: widget.historyItem.bangumiItem.images['large'] ?? '',
+                      width: imageWidth,
+                      height: imageHeight,
                     ),
                   ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (!widget.showDelete) ...[
-                      Observer(
-                        builder: (context) {
-                          collectController.collectibles.length;
-                          return CollectButton(
-                            onClose: () {
-                              FocusScope.of(context).unfocus();
-                            },
-                            bangumiItem: widget.historyItem.bangumiItem,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: SizedBox(
+                      height: imageHeight,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.play_circle_outline,
+                                size: 14,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  episodeText,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.extension_outlined,
+                                size: 14,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  '$sourceText · ${widget.historyItem.adapterName}',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Spacer(),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 12,
+                                color: colorScheme.outline,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                formatTimestampToRelativeTime(widget.historyItem
+                                        .lastWatchTime.millisecondsSinceEpoch ~/
+                                    1000),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: colorScheme.outline,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (!widget.showDelete) ...[
+                        Observer(
+                          builder: (context) {
+                            collectController.collectibles.length;
+                            return CollectButton(
+                              onClose: () {
+                                FocusScope.of(context).unfocus();
+                              },
+                              bangumiItem: widget.historyItem.bangumiItem,
+                              color: colorScheme.onSurfaceVariant,
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.open_in_new,
+                            size: 20,
                             color: colorScheme.onSurfaceVariant,
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.open_in_new,
-                          size: 20,
-                          color: colorScheme.onSurfaceVariant,
+                          ),
+                          tooltip: '番剧详情',
+                          onPressed: () {
+                            context.pushNamed(
+                              '/info/',
+                              arguments: widget.historyItem.bangumiItem,
+                            );
+                          },
                         ),
-                        tooltip: '番剧详情',
-                        onPressed: () {
-                          context.pushNamed(
-                            '/info/',
-                            arguments: widget.historyItem.bangumiItem,
-                          );
-                        },
-                      ),
+                      ],
+                      if (widget.showDelete)
+                        IconButton(
+                          icon: Icon(
+                            Icons.delete_outline,
+                            color: colorScheme.error,
+                          ),
+                          tooltip: '删除记录',
+                          onPressed: () {
+                            widget.onDeleted?.call();
+                          },
+                        ),
                     ],
-                    if (widget.showDelete)
-                      IconButton(
-                        icon: Icon(
-                          Icons.delete_outline,
-                          color: colorScheme.error,
-                        ),
-                        tooltip: '删除记录',
-                        onPressed: () {
-                          widget.onDeleted?.call();
-                        },
-                      ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

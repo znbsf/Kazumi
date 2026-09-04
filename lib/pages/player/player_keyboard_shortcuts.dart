@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kazumi/services/storage/storage.dart';
 import 'package:kazumi/utils/constants.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 typedef PlayerShortcutAction = FutureOr<void> Function();
 
@@ -73,13 +74,14 @@ class _PlayerKeyboardShortcutsState extends State<PlayerKeyboardShortcuts> {
   }
 
   Map<String, List<String>> _loadShortcuts() {
-    return <String, List<String>>{
+    final shortcuts = <String, List<String>>{
       for (final entry in defaultShortcuts.entries)
         entry.key: GStorage.getStringListSettingByName(
           'shortcut_${entry.key}',
           defaultValue: entry.value,
         ),
     };
+    return TvMode.enabled ? withTvRemoteShortcuts(shortcuts) : shortcuts;
   }
 
   KeyEventResult _handleKeyEvent(KeyEvent event) {
@@ -191,4 +193,43 @@ class _PlayerKeyboardShortcutsState extends State<PlayerKeyboardShortcuts> {
 
   @override
   Widget build(BuildContext context) => const SizedBox.shrink();
+}
+
+/// Adds Android TV remote aliases without changing the user's stored mapping.
+Map<String, List<String>> withTvRemoteShortcuts(
+  Map<String, List<String>> source,
+) {
+  final result = <String, List<String>>{
+    for (final entry in source.entries) entry.key: [...entry.value],
+  };
+
+  String label(LogicalKeyboardKey key) => key.keyLabel.isNotEmpty
+      ? key.keyLabel
+      : key.debugName ?? key.keyId.toString();
+
+  void add(String action, LogicalKeyboardKey key) {
+    final values = result.putIfAbsent(action, () => <String>[]);
+    final keyLabel = label(key);
+    if (!values.contains(keyLabel)) values.add(keyLabel);
+  }
+
+  result['volumeup']?.remove(label(LogicalKeyboardKey.arrowUp));
+  result['volumedown']?.remove(label(LogicalKeyboardKey.arrowDown));
+
+  for (final key in [
+    LogicalKeyboardKey.select,
+    LogicalKeyboardKey.enter,
+    LogicalKeyboardKey.numpadEnter,
+    LogicalKeyboardKey.gameButtonA,
+    LogicalKeyboardKey.arrowUp,
+    LogicalKeyboardKey.arrowDown,
+  ]) {
+    add('showcontrols', key);
+  }
+  add('playorpause', LogicalKeyboardKey.mediaPlayPause);
+  add('forward', LogicalKeyboardKey.mediaFastForward);
+  add('rewind', LogicalKeyboardKey.mediaRewind);
+  add('next', LogicalKeyboardKey.mediaTrackNext);
+  add('prev', LogicalKeyboardKey.mediaTrackPrevious);
+  return result;
 }

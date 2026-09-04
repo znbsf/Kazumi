@@ -1,0 +1,109 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
+
+/// Adds a ten-foot-UI focus treatment without changing the mobile surface.
+class TvFocusableSurface extends StatefulWidget {
+  const TvFocusableSurface({
+    super.key,
+    required this.child,
+    required this.onPressed,
+    this.enabled,
+    this.autofocus = false,
+    this.focusNode,
+    this.borderRadius = 16,
+  });
+
+  final Widget child;
+  final VoidCallback onPressed;
+  final bool? enabled;
+  final bool autofocus;
+  final FocusNode? focusNode;
+  final double borderRadius;
+
+  @override
+  State<TvFocusableSurface> createState() => _TvFocusableSurfaceState();
+}
+
+class _TvFocusableSurfaceState extends State<TvFocusableSurface> {
+  bool _focused = false;
+
+  bool get _enabled => widget.enabled ?? TvMode.enabled;
+
+  void _handleFocusChange(bool focused) {
+    if (_focused != focused) {
+      setState(() => _focused = focused);
+    }
+    if (focused) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Scrollable.ensureVisible(
+          context,
+          duration: const Duration(milliseconds: 160),
+          curve: Curves.easeOut,
+          alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+        );
+      });
+    }
+  }
+
+  KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.gameButtonA) {
+      widget.onPressed();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_enabled) {
+      return widget.child;
+    }
+
+    final colorScheme = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      child: Focus(
+        focusNode: widget.focusNode,
+        autofocus: widget.autofocus,
+        onFocusChange: _handleFocusChange,
+        onKeyEvent: _handleKeyEvent,
+        child: AnimatedScale(
+          scale: _focused ? 1.035 : 1,
+          duration: const Duration(milliseconds: 140),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(widget.borderRadius + 2),
+              border: Border.all(
+                color: _focused ? colorScheme.primary : Colors.transparent,
+                width: 3,
+              ),
+              boxShadow: _focused
+                  ? [
+                      BoxShadow(
+                        color: colorScheme.primary.withValues(alpha: 0.28),
+                        blurRadius: 14,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
+  }
+}

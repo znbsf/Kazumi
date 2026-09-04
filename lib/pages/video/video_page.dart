@@ -27,6 +27,7 @@ import 'package:kazumi/modules/download/download_module.dart';
 import 'package:kazumi/services/player/timed_shutdown_service.dart';
 import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/services/platform/display_mode_service.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 import 'package:mobx/mobx.dart' as mobx;
 
 class VideoPage extends StatefulWidget {
@@ -435,6 +436,15 @@ class _VideoPageState extends State<VideoPage>
   void onBackPressed(BuildContext context) async {
     if (KazumiDialog.observer.hasKazumiDialog) {
       KazumiDialog.dismiss();
+      return;
+    }
+    if (TvMode.enabled && videoPageController.showTabBody) {
+      _closeTabBodyAnimated();
+      return;
+    }
+    if (TvMode.enabled && playerController.panel.showVideoController) {
+      playerController.panel.showVideoController = false;
+      keyboardFocus.requestFocus();
       return;
     }
     if (videoPageController.isPip && isDesktop()) {

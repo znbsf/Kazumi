@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.BroadcastReceiver
 import android.content.pm.PackageManager
+import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.app.RemoteAction
 import android.graphics.Color
@@ -70,6 +71,9 @@ class MainActivity: AudioServiceActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (isTelevision()) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
         registerPipActionReceiverIfNeeded()
     }
 
@@ -118,6 +122,8 @@ class MainActivity: AudioServiceActivity() {
             } else if (call.method == "getAndroidSdkVersion") {
                 val sdkVersion = getAndroidSdkVersion()
                 result.success(sdkVersion)
+            } else if (call.method == "isTelevision") {
+                result.success(isTelevision())
             } else if (call.method == "enterFullscreen") {
                 enterAndroidFullscreen()
                 result.success(null)
@@ -191,6 +197,13 @@ class MainActivity: AudioServiceActivity() {
 
     private fun getAndroidSdkVersion(): Int {
         return Build.VERSION.SDK_INT
+    }
+
+    private fun isTelevision(): Boolean {
+        val uiMode = resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
+        return uiMode == Configuration.UI_MODE_TYPE_TELEVISION ||
+            packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
+            packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
     }
 
     private fun enterAndroidFullscreen() {

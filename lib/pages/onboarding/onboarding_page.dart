@@ -14,6 +14,7 @@ import 'package:kazumi/plugins/plugins_controller.dart';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/storage/storage.dart';
 import 'package:kazumi/services/update/startup_update_check.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({
@@ -31,6 +32,8 @@ class OnboardingPage extends StatefulWidget {
 
 class _OnboardingPageState extends State<OnboardingPage> {
   final PageController pageController = PageController();
+  final FocusNode _primaryFocusNode =
+      FocusNode(debugLabel: 'TV onboarding primary action');
   int currentIndex = 0;
   bool agreed = false;
   bool installingBundled = false;
@@ -43,7 +46,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
   @override
   void dispose() {
     pageController.dispose();
+    _primaryFocusNode.dispose();
     super.dispose();
+  }
+
+  void _requestPrimaryFocus() {
+    if (!TvMode.enabled) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _primaryFocusNode.canRequestFocus) {
+        _primaryFocusNode.requestFocus();
+      }
+    });
   }
 
   List<Widget> _buildStepBodies() {
@@ -176,6 +189,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
               ),
             ),
             FilledButton(
+              focusNode: _primaryFocusNode,
+              autofocus: TvMode.enabled,
               onPressed: installingBundled ? null : _handlePrimary,
               child: installingBundled
                   ? const SizedBox(
@@ -213,6 +228,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   setState(() {
                     currentIndex = index;
                   });
+                  _requestPrimaryFocus();
                 },
                 children: [
                   for (final body in _buildStepBodies())

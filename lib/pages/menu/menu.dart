@@ -6,6 +6,7 @@ import 'package:kazumi/bean/widget/embedded_native_control_area.dart';
 import 'package:kazumi/navigation.dart';
 import 'package:kazumi/pages/menu/route_visibility.dart';
 import 'package:kazumi/pages/router.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 class ScaffoldMenu extends StatefulWidget {
   const ScaffoldMenu({super.key});
@@ -16,7 +17,9 @@ class ScaffoldMenu extends StatefulWidget {
 
 class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
   final _outletKey = GlobalKey<RouterOutletState>();
+  final _searchFocusNode = FocusNode(debugLabel: 'TV search entry');
   DateTime? _lastExitPromptAt;
+  bool _didScheduleInitialTvFocus = false;
 
   /// The shell sits at the bottom of the root stack and stays mounted while
   /// other pages cover it, so it publishes that state for its subtree.
@@ -29,11 +32,16 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
     if (route is PageRoute<void>) {
       rootRouteObserver.subscribe(this, route);
     }
+    if (!_didScheduleInitialTvFocus) {
+      _didScheduleInitialTvFocus = true;
+      _requestTvEntryFocus();
+    }
   }
 
   @override
   void dispose() {
     rootRouteObserver.unsubscribe(this);
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -41,7 +49,18 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
   void didPushNext() => _setCovered(true);
 
   @override
-  void didPopNext() => _setCovered(false);
+  void didPopNext() {
+    _setCovered(false);
+    _requestTvEntryFocus();
+  }
+
+  void _requestTvEntryFocus() {
+    if (!TvMode.enabled) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isCovered) return;
+      _searchFocusNode.requestFocus();
+    });
+  }
 
   void _setCovered(bool value) {
     if (!mounted || _isCovered == value) {
@@ -100,7 +119,7 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
         },
         child: OrientationBuilder(
           builder: (context, orientation) {
-            return orientation == Orientation.portrait
+            return orientation == Orientation.portrait && !TvMode.enabled
                 ? _bottomMenu(context, selectedIndex)
                 : _sideMenu(context, selectedIndex);
           },
@@ -175,6 +194,8 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
               leading: FloatingActionButton(
                 elevation: 0,
                 heroTag: null,
+                autofocus: TvMode.enabled,
+                focusNode: _searchFocusNode,
                 onPressed: () => context.pushNamed('/search/'),
                 child: const Icon(Icons.search),
               ),

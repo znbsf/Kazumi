@@ -3,6 +3,8 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:kazumi/modules/bangumi/bangumi_item.dart';
 import 'package:kazumi/bean/card/network_img_layer.dart';
 import 'package:kazumi/utils/device.dart';
+import 'package:kazumi/bean/widget/tv_focusable_surface.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 /// 时间线番剧卡片
 class BangumiTimelineCard extends StatelessWidget {
@@ -38,7 +40,11 @@ class BangumiTimelineCard extends StatelessWidget {
         : cardHeight;
     final double imageWidth = contentHeight * 0.7;
 
-    return Card(
+    final openBangumi = onTap ??
+        () {
+          context.pushNamed('/info/', arguments: bangumiItem);
+        };
+    final card = Card(
       elevation: 0,
       margin: const EdgeInsets.symmetric(vertical: 4),
       shape: RoundedRectangleBorder(
@@ -47,11 +53,9 @@ class BangumiTimelineCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       color: colorScheme.surfaceContainerLow,
       child: InkWell(
+        canRequestFocus: !TvMode.enabled,
         borderRadius: BorderRadius.circular(borderRadius),
-        onTap: onTap ??
-            () {
-              context.pushNamed('/info/', arguments: bangumiItem);
-            },
+        onTap: openBangumi,
         child: SizedBox(
           height: cardHeight,
           width: cardWidth,
@@ -79,6 +83,10 @@ class BangumiTimelineCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return TvFocusableSurface(
+      onPressed: openBangumi,
+      child: card,
     );
   }
 

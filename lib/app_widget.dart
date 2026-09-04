@@ -14,6 +14,7 @@ import 'package:kazumi/navigation.dart';
 import 'package:kazumi/utils/constants.dart';
 import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/utils/theme.dart';
+import 'package:kazumi/bean/widget/tv_app_shell.dart';
 
 class AppWidget extends StatefulWidget {
   const AppWidget({super.key});
@@ -346,6 +347,8 @@ class _AppWidgetState extends State<AppWidget>
           themeMode: themeProvider.themeMode,
           scaffoldMessengerKey: rootScaffoldMessengerKey,
           routerConfig: ModularApp.routerConfigOf(context),
+          builder: (context, child) =>
+              TvAppShell(child: child ?? const SizedBox.shrink()),
         );
       },
     );

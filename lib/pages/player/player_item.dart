@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:kazumi/pages/player/player_item_panel.dart';
 import 'package:kazumi/pages/player/player_keyboard_shortcuts.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 import 'package:kazumi/pages/player/controller/player_super_resolution.dart';
 import 'package:kazumi/pages/player/player_panel_hold.dart';
 import 'package:kazumi/pages/player/player_pointer_interaction.dart';
@@ -377,6 +378,7 @@ class _PlayerItemState extends State<PlayerItem>
       'speed3': () => setPlaybackSpeed(3.0),
       'speedup': () => handleSpeedChange('up'),
       'speeddown': () => handleSpeedChange('down'),
+      'showcontrols': _showTvControls,
     };
     keyboardLongPressActions = {
       'forward': PlayerLongPressShortcutActions(
@@ -384,6 +386,14 @@ class _PlayerItemState extends State<PlayerItem>
         onRelease: handleShortcutForwardUp,
       ),
     };
+  }
+
+  void _showTvControls() {
+    displayVideoController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      FocusScope.of(context).nextFocus();
+    });
   }
 
   void _initPlayerMenu() {
@@ -1546,7 +1556,10 @@ class _PlayerItemState extends State<PlayerItem>
                       focusScopeNode: widget.keyboardFocus,
                       actions: keyboardActions,
                       longPressActions: keyboardLongPressActions,
-                      isBlocked: () => _openPlayerMenuCount > 0,
+                      isBlocked: () =>
+                          _openPlayerMenuCount > 0 ||
+                          (TvMode.enabled &&
+                              playerController.panel.showVideoController),
                     ),
                     Center(
                       key: _videoSurfaceKey,

@@ -4,6 +4,8 @@ import 'package:kazumi/bean/card/network_img_layer.dart';
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/modules/bangumi/bangumi_item.dart';
 import 'package:kazumi/utils/device.dart';
+import 'package:kazumi/bean/widget/tv_focusable_surface.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 // 视频卡片 - 垂直布局
 class BangumiCardV extends StatelessWidget {
@@ -20,21 +22,24 @@ class BangumiCardV extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    void openBangumi() {
+      if (!canTap) {
+        KazumiDialog.showToast(
+          message: '编辑模式',
+        );
+        return;
+      }
+      context.pushNamed('/info/', arguments: bangumiItem);
+    }
+
+    final card = Card(
       elevation: 0,
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       child: GestureDetector(
         child: InkWell(
-          onTap: () {
-            if (!canTap) {
-              KazumiDialog.showToast(
-                message: '编辑模式',
-              );
-              return;
-            }
-            context.pushNamed('/info/', arguments: bangumiItem);
-          },
+          canRequestFocus: !TvMode.enabled,
+          onTap: openBangumi,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -67,6 +72,10 @@ class BangumiCardV extends StatelessWidget {
           ),
         ),
       ),
+    );
+    return TvFocusableSurface(
+      onPressed: openBangumi,
+      child: card,
     );
   }
 }
