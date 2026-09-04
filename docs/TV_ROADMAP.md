@@ -81,7 +81,8 @@ flutter build apk --debug --flavor tv --dart-define=KAZUMI_DEV_PROXY=10.0.2.2:10
 - [x] `flutter analyze` 无新增 warning，相关 widget/unit tests 通过。
 - [x] Android TV APK 构建成功并安装到 TV AVD。
 - [x] 在至少一个 1080p Android TV/Google TV AVD 完成完整路径冒烟测试。
-- [ ] 真实电视或盒子验证：待用户设备测试；模拟器通过不能替代这一项。
+- [x] 实体小米电视完成对应 ABI 的 TV APK 安装、Leanback 启动和横屏首次引导验证。
+- [ ] 实体电视完整遥控器键码、真实视频硬解和长时间播放仍待人工验收；安装成功不能替代这些项。
 
 ### 2026-09-04 验证记录
 
@@ -124,11 +125,14 @@ flutter build apk --debug --flavor tv --dart-define=KAZUMI_DEV_PROXY=10.0.2.2:10
   焦点描边/放大与下方列表刷新均可见；侧栏“遥控器”对照页完成可见路径验证。
 - Android 本地产物命名为 `Kazumi-TV-<version>-<buildType>.apk` 和
   `Kazumi-Mobile-<version>-<buildType>.apk`；GitHub 发行文件名额外标记 TV/Mobile 和 ABI。
+- `Kazumi-TV-2.3.0-armeabi-v7a-release.apk` 已安装到 `MiTV-ASTP0`，系统确认
+  `com.znbsf.kazumi.tv` 版本 `2.3.0`（versionCode `203001`）并通过 Leanback 启动；
+  首次免责声明页面以 1920×1080 横屏显示。尚未代用户同意条款或完成真机来源/播放验证。
 
 仍待确认：
 
 - 当前 AVD 的直连网络仍不可用，需要显式复用宿主机代理。
-- 真实电视/盒子的标准 EPG 键码、解码能力、焦点观感和长时间播放尚未验证。
+- 真实电视/盒子的标准 EPG 键码、解码能力、完整焦点观感和长时间播放尚未验证。
 
 ### 第一阶段非目标
 
