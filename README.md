@@ -1,6 +1,6 @@
 <div align=center>
 
-<h1>Kazumi</h1>
+<h1>Kazumi TV Fork</h1>
 
 <img src="assets/images/logo/logo_rounded.png" width=200></img>
 
@@ -8,6 +8,7 @@
 
 <img src="https://img.shields.io/badge/Flutter-03A9F4?style=for-the-badge&logo=flutter&logoColor=white"></img>
 <img src="https://img.shields.io/badge/Dart-00B4AB?style=for-the-badge&logo=Dart&logoColor=white"></img>
+<img src="https://img.shields.io/badge/Android_TV-3DDC84?style=for-the-badge&logo=android&logoColor=white"></img>
 
 <a href="https://trendshift.io/repositories/11432"><img src="https://trendshift.io/api/badge/trendshift/repositories/11432/yearly?language=Dart"></img></a>
 <a href="https://hellogithub.com/repository/Predidit/Kazumi" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=68d824ea55ee4b07aba6fe1dd61ac939&claim_uid=J9Qu6aDd8LT1nU0"/></img></a>
@@ -15,8 +16,106 @@
 <p>使用 Flutter 开发的基于自定义规则的番剧采集与在线观看程序。使用最多五行基于 <code>Xpath</code> 语法的选择器构建自己的规则。支持规则导入与规则分享。支持基于 <code>Anime4K</code> 的实时超分辨率。绝赞开发中 (～￣▽￣)～</p>
 </div>
 
+> [!IMPORTANT]
+> 这是基于 [Predidit/Kazumi](https://github.com/Predidit/Kazumi) 开发的非官方、开源
+> Android TV 分支。当前默认分支包含 TV 第一阶段能力，同时保留独立的手机版构建；
+> 手机向电视接力播放属于第二阶段，尚未在这里标记为完成。
+
+## 这个 Fork 做了什么
+
+目标是在不改变 Kazumi 原有视觉语言、规则系统、弹幕和 libmpv/media-kit 播放内核的
+前提下，让它可以作为真正的 Android TV / Google TV 应用使用。
+
+| 范围 | 当前能力 |
+| --- | --- |
+| 独立安装 | `mobile` 与 `tv` 两个 product flavor；TV 包名为 `com.znbsf.kazumi.tv`，可与手机版共存 |
+| TV 入口 | Leanback launcher、TV banner、非必需触摸屏声明和横屏窗口 |
+| 十英尺界面 | 首页、时间表、追番、历史、设置和播放页支持 D-pad 焦点与确认键，沿用原有配色和卡片样式 |
+| 初始化与来源 | 保留首次初始化、规则目录、规则安装、详情、播放源和选集流程 |
+| 播放器 | 播放/暂停、快进快退、上下集、选集、收藏、弹幕、详情、返回和退出均可由遥控器操作 |
+| 播放信息 | `INFO` 可查看实际解码通路、视频输出、GPU context、编码、像素格式、帧率、缓存和丢帧 |
+| 硬件解码 | Android 默认使用 `auto-safe`；支持 MediaCodec、`gpu/gpu-next` 以及手动选择 `mediacodec_embed` |
+| 手机兼容 | 手机版继续使用原包名和手机布局；TV 专属诊断、遥控器帮助和焦点行为不会改变手机界面 |
+
+更完整的阶段边界、验证记录和第二阶段计划见
+[TV 路线图](docs/TV_ROADMAP.md)；采用的开源项目设计及取舍见
+[Android TV 开源播放器参考](docs/TV_OPEN_SOURCE_REFERENCES.md)。
+
+## TV 遥控器键位
+
+| 遥控器按键 | 播放器动作 |
+| --- | --- |
+| D-pad / OK | 控制层隐藏时显示控制层；显示后进行焦点导航和确认 |
+| Play / Pause | 播放、暂停或切换状态 |
+| Fast Forward / Rewind | 快进、快退 |
+| Channel Up / Down | 下一集、上一集 |
+| EPG / Guide / Top Menu / 黄键 | 打开选集面板 |
+| CC / Captions / Audio Track / 红键 | 切换弹幕；不切换内嵌字幕轨 |
+| Favorite / Bookmark / 绿键 | 标记为“在看”或取消追番 |
+| INFO / 蓝键 | 打开视频详情与实时播放诊断 |
+| HELP / MENU / F1 / Context Menu | 打开遥控器帮助页 |
+| Back / Escape | 关闭面板或返回上一层 |
+| Stop / Exit / Media Close | 退出播放器 |
+| Volume / Mute | 交由 Android TV 系统处理，以兼容电视、CEC、ARC/eARC 和功放 |
+
+部分电视会在应用收到事件前拦截 EPG、音量等系统保留键。Kazumi TV 会处理设备实际
+下发给应用的标准键，同时提供黄键、Top Menu 等兼容入口。
+
+## 硬件解码状态
+
+“启用硬件加速”只表示允许选择硬解，并不保证每个视频都一定使用硬件单元。因此 TV
+播放页通过 `INFO` 展示 mpv 的实际运行值，而不是只显示设置项：
+
+- `hwdec-current`：当前解码通路；`no` 表示软件解码；
+- `hwdec-interop`：硬解帧与视频输出的互操作方式；
+- `current-vo` / `current-gpu-context`：当前渲染器和 GPU context；
+- 视频编码、像素格式、估算帧率、缓存时长和两类丢帧计数。
+
+当前 Google TV AVD 的在线播放验证读到 `mediacodec-copy + gpu-next + android`。这能
+证明 MediaCodec 通路已经接入，但模拟器结果不能替代实体电视芯片上的 4K/HDR、功耗、
+解码器组件和长时间播放验证。
+
+`mediacodec_embed` 是功耗优先的手动选项，但它不支持 Anime4K 超分辨率，并会限制
+部分 mpv 视频滤镜和 OSD 合成能力，因此没有被强制设为 TV 默认值。
+
+## 构建 TV 与手机版
+
+推荐使用 Android Studio 打开仓库根目录，通过 Device Manager 创建 Android TV 或
+Google TV AVD。项目同时保留两个 Android flavor：
+
+```bash
+# TV Debug APK
+flutter build apk --debug --flavor tv
+
+# Mobile Debug APK
+flutter build apk --debug --flavor mobile
+```
+
+构建产物：
+
+- `build/app/outputs/flutter-apk/app-tv-debug.apk`
+- `build/app/outputs/flutter-apk/app-mobile-debug.apk`
+
+如果 TV AVD 无法直接访问网络，可在开发时显式复用宿主机代理：
+
+```bash
+flutter build apk --debug --flavor tv \
+  --dart-define=KAZUMI_DEV_PROXY=10.0.2.2:PORT
+```
+
+该参数只用于本地开发环境，不应写死到公开发行包。
+
+常用验证命令：
+
+```bash
+flutter test
+flutter analyze --no-fatal-infos --fatal-warnings
+flutter build apk --debug --flavor tv
+```
+
 ## 支持平台
 
+- Android TV / Google TV（本 Fork 的 `tv` flavor）
 - Android 10 及以上
 - Windows 10 及以上
 - MacOS 10.15 及以上
@@ -69,7 +168,16 @@
 
 ## 下载
 
-通过本页面 [Releases](https://github.com/Predidit/Kazumi/releases/latest) 选项卡下载：
+### Kazumi TV Fork
+
+当前 TV 版以源码和 Debug 构建验证为主，暂未发布正式签名 APK。后续发行包会放在本
+Fork 的 [Releases](https://github.com/znbsf/Kazumi/releases)；现在可按上面的 `tv`
+flavor 命令自行构建。
+
+### 上游 Kazumi 正式版
+
+手机版稳定发行请通过上游
+[Predidit/Kazumi Releases](https://github.com/Predidit/Kazumi/releases/latest) 下载：
 
 <a href="https://github.com/Predidit/Kazumi/releases">
   <img src="static/svg/get_it_on_github.svg" alt="Get it on Github" width="200"/>
