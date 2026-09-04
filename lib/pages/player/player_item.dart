@@ -390,6 +390,7 @@ class _PlayerItemState extends State<PlayerItem>
       'showepisodes': widget.showEpisodeGuide,
       'togglefavorite': _toggleFavorite,
       'showdetails': _showVideoDetails,
+      'showremotehelp': _showRemoteHelp,
       'back': () => widget.onBackPressed(context),
       'exitplayer': widget.exitPlayer,
     };
@@ -414,6 +415,7 @@ class _PlayerItemState extends State<PlayerItem>
     LogicalKeyboardKey key,
   ) {
     if (!TvMode.enabled) return true;
+    if (shouldDeferTvKeyToPlatform(key)) return false;
     final isNavigationKey = key == LogicalKeyboardKey.select ||
         key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.numpadEnter ||
@@ -430,6 +432,14 @@ class _PlayerItemState extends State<PlayerItem>
 
   void _showVideoDetails() {
     showVideoDetailsSheet(context, playerController: playerController);
+  }
+
+  void _showRemoteHelp() {
+    showVideoDetailsSheet(
+      context,
+      playerController: playerController,
+      initialTab: VideoDetailsTab.remote,
+    );
   }
 
   Future<void> _toggleFavorite() async {

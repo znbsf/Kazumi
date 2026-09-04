@@ -42,12 +42,35 @@ void main() {
     );
     expect(
         result['volumeup'], contains(_label(LogicalKeyboardKey.audioVolumeUp)));
+    expect(
+      result['showremotehelp'],
+      containsAll([
+        _label(LogicalKeyboardKey.help),
+        _label(LogicalKeyboardKey.contextMenu),
+        _label(LogicalKeyboardKey.f1),
+      ]),
+    );
     expect(result['back'], contains(_label(LogicalKeyboardKey.goBack)));
     expect(result['exitplayer'], contains(_label(LogicalKeyboardKey.exit)));
 
     // The helper must not mutate the persisted user mapping it receives.
     expect(source['volumeup'], contains(_label(LogicalKeyboardKey.arrowUp)));
     expect(source.containsKey('showcontrols'), isFalse);
+  });
+
+  test('TV volume keys are left to Android and HDMI CEC', () {
+    expect(
+      shouldDeferTvKeyToPlatform(LogicalKeyboardKey.audioVolumeUp),
+      isTrue,
+    );
+    expect(
+      shouldDeferTvKeyToPlatform(LogicalKeyboardKey.audioVolumeMute),
+      isTrue,
+    );
+    expect(
+      shouldDeferTvKeyToPlatform(LogicalKeyboardKey.mediaPlayPause),
+      isFalse,
+    );
   });
 
   testWidgets('TV remote keys dispatch through the player shortcut handler', (

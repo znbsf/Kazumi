@@ -232,6 +232,8 @@ class MainActivity: AudioServiceActivity() {
             KeyEvent.KEYCODE_PROG_GREEN -> "togglefavorite"
             KeyEvent.KEYCODE_INFO,
             KeyEvent.KEYCODE_PROG_BLUE -> "showdetails"
+            KeyEvent.KEYCODE_HELP,
+            KeyEvent.KEYCODE_MENU -> "showremotehelp"
             KeyEvent.KEYCODE_MEDIA_CLOSE,
             KeyEvent.KEYCODE_MEDIA_STOP -> "exitplayer"
             else -> null

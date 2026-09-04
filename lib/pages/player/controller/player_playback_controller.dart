@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/pages/player/controller/player_debug_controller.dart';
+import 'package:kazumi/pages/player/controller/player_diagnostics.dart';
 import 'package:kazumi/pages/player/controller/player_super_resolution.dart';
 import 'package:kazumi/services/shaders/shader_asset_service.dart';
 import 'package:kazumi/utils/constants.dart';
@@ -89,6 +90,43 @@ abstract class _PlayerPlaybackController with Store {
   bool playerDebugMode = false;
   int buttonSkipTime = 80;
   int arrowKeySkipTime = 10;
+
+  static const _diagnosticProperties = <String>[
+    'hwdec-current',
+    'hwdec-interop',
+    'current-vo',
+    'current-gpu-context',
+    'video-params/pixelformat',
+    'video-params/hw-pixelformat',
+    'estimated-vf-fps',
+    'demuxer-cache-duration',
+    'frame-drop-count',
+    'decoder-frame-drop-count',
+    'track-list',
+  ];
+
+  Future<PlayerDiagnosticsSnapshot> readDiagnostics() async {
+    final player = mediaPlayer;
+    final properties = <String, String>{};
+    final platform = player?.platform;
+    if (player != null && platform is NativePlayer) {
+      for (final property in _diagnosticProperties) {
+        try {
+          final value = await platform.getProperty(property);
+          if (mediaPlayer != player) break;
+          properties[property] = value;
+        } catch (_) {
+          // mpv properties are intentionally best-effort: some values are
+          // unavailable until the first decoded/rendered frame.
+        }
+      }
+    }
+    return PlayerDiagnosticsSnapshot.fromProperties(
+      properties,
+      hardwareAccelerationEnabled: hAenable,
+      configuredHardwareDecoder: hardwareDecoder,
+    );
+  }
 
   /// 历史记录传入的 offset
   int startOffset = 0;

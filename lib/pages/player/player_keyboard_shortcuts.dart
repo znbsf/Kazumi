@@ -286,8 +286,10 @@ Map<String, List<String>> withTvRemoteShortcuts(
   add('togglefavorite', LogicalKeyboardKey.favoriteStore0);
   add('togglefavorite', LogicalKeyboardKey.colorF1Green);
   add('showdetails', LogicalKeyboardKey.info);
-  add('showdetails', LogicalKeyboardKey.contextMenu);
   add('showdetails', LogicalKeyboardKey.colorF3Blue);
+  add('showremotehelp', LogicalKeyboardKey.help);
+  add('showremotehelp', LogicalKeyboardKey.contextMenu);
+  add('showremotehelp', LogicalKeyboardKey.f1);
   add('back', LogicalKeyboardKey.goBack);
   add('back', LogicalKeyboardKey.escape);
   add('back', LogicalKeyboardKey.gameButtonB);
@@ -296,4 +298,10 @@ Map<String, List<String>> withTvRemoteShortcuts(
   add('exitplayer', LogicalKeyboardKey.mediaClose);
   add('exitplayer', LogicalKeyboardKey.mediaStop);
   return result;
+}
+
+bool shouldDeferTvKeyToPlatform(LogicalKeyboardKey key) {
+  return key == LogicalKeyboardKey.audioVolumeUp ||
+      key == LogicalKeyboardKey.audioVolumeDown ||
+      key == LogicalKeyboardKey.audioVolumeMute;
 }

@@ -58,6 +58,8 @@ flutter build apk --debug --flavor tv --dart-define=KAZUMI_DEV_PROXY=10.0.2.2:10
 - 播放器支持电视遥控器的确认键、方向键和媒体键；控制层显示时，方向键用于控件导航。
 - TV 播放页映射 EPG/Guide、字幕/CC（切换弹幕）、收藏、信息、频道、音量、返回、停止和退出键；
   红/绿/黄/蓝功能键分别作为弹幕、收藏、选集和详情的兼容入口。
+- INFO/蓝键显示 mpv 实际解码通路、视频输出、帧率、缓存和丢帧；HELP/MENU 显示遥控器键表；
+  设计来源与取舍记录在 `docs/TV_OPEN_SOURCE_REFERENCES.md`。
 - 保留规则、弹幕、字幕、超分辨率和播放源能力，不通过删功能换取 TV 兼容。
 
 ### 第一阶段验收门槛
@@ -103,6 +105,9 @@ flutter build apk --debug --flavor tv --dart-define=KAZUMI_DEV_PROXY=10.0.2.2:10
   桥接也覆盖 EPG/Guide、字幕/CC（映射为弹幕开关）、收藏与四色功能键。标准 EPG 键在 AVD 中被系统层
   截获，仍保留到实体遥控器验收。
 - 历史记录卡片高度与内部海报、边距和内边距一致，不再出现底部 2px overflow。
+- INFO 状态页在 TV AVD 的真实网络视频上读到 `hwdec-current=mediacodec-copy`、
+  `current-vo=gpu-next` 和 `current-gpu-context=android`；这证明 MediaCodec 通路已接入，
+  但模拟器结果不等同于实体电视芯片硬解证明。
 
 仍待确认：
 
