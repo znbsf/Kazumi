@@ -35,7 +35,7 @@
 | 顶部分类 | TV 利用横向空间平铺“热门番组/日常/原创…”；左右移动时焦点放大突出，停留后刷新下方番剧 |
 | 初始化与来源 | 保留首次初始化、规则目录、规则安装、详情、播放源和选集流程 |
 | 播放器 | 播放/暂停、快进快退、上下集、选集、收藏、弹幕、详情、返回和退出均可由遥控器操作 |
-| 按键帮助 | TV 侧栏新增“遥控器”页面，集中展示首页选台、导航、播放器和系统键映射 |
+| 遥控器与操作设置 | TV 侧栏“遥控器”作为快捷入口；页面横向切换固定遥控器说明与可编辑的播放器通用按键，避免两套说明重复维护 |
 | 播放信息 | `INFO` 可查看实际解码通路、视频输出、GPU context、编码、像素格式、帧率、缓存和丢帧 |
 | 硬件解码 | Android 默认使用 `auto-safe`；支持 MediaCodec、`gpu/gpu-next` 以及手动选择 `mediacodec_embed` |
 | 手机兼容 | 手机版继续使用原包名和手机布局；TV 专属诊断、遥控器帮助和焦点行为不会改变手机界面 |
@@ -141,7 +141,7 @@ flutter build apk --debug --flavor tv
 <table>
   <tr>
     <td><img alt="Kazumi TV 带节目号的首页" src="static/screenshot/tv_home.png"></td>
-    <td><img alt="Kazumi TV 遥控器按键对照表" src="static/screenshot/tv_remote_help.png"></td>
+    <td><img alt="Kazumi TV 遥控器与操作设置" src="static/screenshot/tv_remote_help.png"></td>
   <tr>
 </table>
 
@@ -174,7 +174,7 @@ flutter build apk --debug --flavor tv
 - [X]  番剧下载
 - [X]  TV 首页节目号和数字键直达
 - [X]  TV 首页横向分类栏和焦点联动
-- [X]  TV 遥控器按键对照页
+- [X]  TV 遥控器说明与操作设置合并页
 - [ ]  卡片展示日本实际播出电视台台标（待确定节目映射、台标授权和更新数据源）
 - [ ]  手机与 TV 发现、配对和按节目/来源/集数/时间点接力播放
 - [ ]  番剧更新提醒

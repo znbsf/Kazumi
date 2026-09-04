@@ -14,7 +14,7 @@ import 'package:kazumi/pages/search/search_module.dart';
 import 'package:kazumi/pages/settings/settings_module.dart';
 import 'package:kazumi/pages/timeline/timeline_controller.dart';
 import 'package:kazumi/pages/timeline/timeline_module.dart';
-import 'package:kazumi/pages/tv_remote_help/tv_remote_help_page.dart';
+import 'package:kazumi/pages/settings/keyboard_settings.dart';
 import 'package:kazumi/pages/video/video_module.dart';
 import 'package:kazumi/services/storage/storage.dart';
 import 'package:kazumi/plugins/plugins_controller.dart';
@@ -64,7 +64,7 @@ final tabModule = createModule(
             ..route(
               '/remote-help/',
               transition: TransitionType.none,
-              child: (context, state) => const TvRemoteHelpPage(),
+              child: (context, state) => const KeyboardSettingsPage(),
             );
         },
       );
