@@ -132,16 +132,27 @@
           - name: Print Flutter version
             run: flutter doctor -v
             shell: bash
-          - name: Build Flutter for Android
+          - name: Build Flutter for Android mobile
             run: >-
-              flutter build apk --split-per-abi
+              flutter build apk --flavor mobile --split-per-abi
               --dart-define=DANDANAPI_APPID=$DANDANAPI_APPID
               --dart-define=DANDANAPI_KEY=$DANDANAPI_KEY
               --dart-define=KAZUMI_APPID=$KAZUMI_APPID
               --dart-define=KAZUMI_KEY=$KAZUMI_KEY
             shell: bash
-          - name: Package android build output
-            run: cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk Kazumi_android_canary.apk
+          - name: Package Android mobile output
+            run: cp build/app/outputs/flutter-apk/app-arm64-v8a-mobile-release.apk Kazumi_android_mobile_canary.apk
+            shell: bash
+          - name: Build Flutter for Android TV
+            run: >-
+              flutter build apk --flavor tv --split-per-abi
+              --dart-define=DANDANAPI_APPID=$DANDANAPI_APPID
+              --dart-define=DANDANAPI_KEY=$DANDANAPI_KEY
+              --dart-define=KAZUMI_APPID=$KAZUMI_APPID
+              --dart-define=KAZUMI_KEY=$KAZUMI_KEY
+            shell: bash
+          - name: Package Android TV output
+            run: cp build/app/outputs/flutter-apk/app-arm64-v8a-tv-release.apk Kazumi_android_tv_canary.apk
             shell: bash
 
           - name: Upload android outputs

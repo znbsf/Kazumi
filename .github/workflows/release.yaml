@@ -69,7 +69,7 @@
             run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
             shell: bash
           - name: Echo build progress
-            run: echo "Kazumi_android_${{ env.tag }}.apk build progress"
+            run: echo "Kazumi Android mobile and TV APK build progress"
             shell: bash
           - name: Install dependencies
             run: |
@@ -92,16 +92,27 @@
             shell: bash
           - name: Remove build id
             run: sed -i -e 's/-Wl,/-Wl,--build-id=none,/' ${{ steps.flutter-action.outputs.PUB-CACHE-PATH }}/hosted/pub.dev/jni-*/src/CMakeLists.txt
-          - name: Build Flutter for Android
+          - name: Build Flutter for Android mobile
             run: >-
-              flutter build apk --split-per-abi
+              flutter build apk --flavor mobile --split-per-abi
               --dart-define=DANDANAPI_APPID=$DANDANAPI_APPID
               --dart-define=DANDANAPI_KEY=$DANDANAPI_KEY
               --dart-define=KAZUMI_APPID=$KAZUMI_APPID
               --dart-define=KAZUMI_KEY=$KAZUMI_KEY
             shell: bash
-          - name: Package android build output
-            run: cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk Kazumi_android_${env:tag}.apk
+          - name: Package Android mobile output
+            run: cp build/app/outputs/flutter-apk/app-arm64-v8a-mobile-release.apk Kazumi_android_mobile_${tag}.apk
+            shell: bash
+          - name: Build Flutter for Android TV
+            run: >-
+              flutter build apk --flavor tv --split-per-abi
+              --dart-define=DANDANAPI_APPID=$DANDANAPI_APPID
+              --dart-define=DANDANAPI_KEY=$DANDANAPI_KEY
+              --dart-define=KAZUMI_APPID=$KAZUMI_APPID
+              --dart-define=KAZUMI_KEY=$KAZUMI_KEY
+            shell: bash
+          - name: Package Android TV output
+            run: cp build/app/outputs/flutter-apk/app-arm64-v8a-tv-release.apk Kazumi_android_tv_${tag}.apk
             shell: bash
 
           - name: Upload android outputs
@@ -520,12 +531,13 @@
               path: android_outputs 
           - name: List files in android_outputs directory
             run: ls -l android_outputs   
-          - name: Copy android build file to unsigned floder
+          - name: Copy Android build files to unsigned folders
             run: | 
-              mkdir build
-              mkdir build/unsigned
-              mkdir build/signed
-              cp android_outputs/* build/unsigned/Kazumi_android_${{ env.tag }}.apk
+              mkdir -p build/unsigned/mobile
+              mkdir -p build/unsigned/tv
+              mkdir -p build/signed
+              cp android_outputs/Kazumi_android_mobile_${{ env.tag }}.apk build/unsigned/mobile/
+              cp android_outputs/Kazumi_android_tv_${{ env.tag }}.apk build/unsigned/tv/
 
           - name: Download iOS build file
             uses: actions/download-artifact@v4
@@ -567,19 +579,32 @@
           - name: Copy linux arm64 build file to root
             run: cp linux_arm64_outputs/* .
 
-          - name: Sign APK
-            id: sign_app
+          - name: Sign mobile APK
+            id: sign_mobile_app
             uses: filippoLeporati93/android-release-signer@v1
             with:
-              releaseDirectory: build/unsigned
+              releaseDirectory: build/unsigned/mobile
               signingKeyBase64: ${{ secrets.SIGNING_KEY_BASE64 }}
               alias: ${{ secrets.KEY_ALIAS }}
               keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
             env:
               BUILD_TOOLS_VERSION: "34.0.0"
 
-          - name: Copy Signed android build file
-            run: cp ${{steps.sign_app.outputs.signedReleaseFile}} build/signed/Kazumi_android_${{ env.tag }}.apk
+          - name: Sign TV APK
+            id: sign_tv_app
+            uses: filippoLeporati93/android-release-signer@v1
+            with:
+              releaseDirectory: build/unsigned/tv
+              signingKeyBase64: ${{ secrets.SIGNING_KEY_BASE64 }}
+              alias: ${{ secrets.KEY_ALIAS }}
+              keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+            env:
+              BUILD_TOOLS_VERSION: "34.0.0"
+
+          - name: Copy signed Android build files
+            run: |
+              cp ${{steps.sign_mobile_app.outputs.signedReleaseFile}} build/signed/Kazumi_android_mobile_${{ env.tag }}.apk
+              cp ${{steps.sign_tv_app.outputs.signedReleaseFile}} build/signed/Kazumi_android_tv_${{ env.tag }}.apk
 
           - name: Create release
             uses: softprops/action-gh-release@v2

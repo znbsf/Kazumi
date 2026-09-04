@@ -7,7 +7,8 @@ GPL-3.0；发布前还需要确认上游图标的单独授权，或替换为本�
 
 在同一个开源仓库内保留 Kazumi 的配色、排版和内容结构，同时让手机与
 Android TV/Google TV 各自拥有适合其输入方式的界面。共享规则解析、历史记录、
-播放器和数据模型，不复制出两套不可同步的业务代码。
+播放器和数据模型，不复制出两套不可同步的业务代码；Android 端通过 product
+flavors 分别发布手机与电视安装包。
 
 ## 阶段总览
 
@@ -18,9 +19,29 @@ Android TV/Google TV 各自拥有适合其输入方式的界面。共享规则�
 
 ## 第一阶段：Android TV 版本
 
+### 构建结构
+
+| Flavor | 安装包 | Application ID | 启动入口 |
+| --- | --- | --- | --- |
+| `mobile` | Kazumi Mobile | `com.predidit.kazumi` | `LAUNCHER` |
+| `tv` | Kazumi TV | `com.znbsf.kazumi.tv` | `LEANBACK_LAUNCHER` |
+
+两个 flavor 共享 `lib/`、播放器、规则和数据层，但 Manifest、包名、应用名称和
+TV Banner 分开。它们可以同时安装，也可以独立发布和更新。
+
+本机构建命令：
+
+```powershell
+flutter build apk --debug --flavor mobile
+flutter build apk --debug --flavor tv
+```
+
+Android Studio 的 Build Variants 中选择 `mobileDebug` 或 `tvDebug`；运行目标分别
+使用手机 AVD 或 Google TV AVD。
+
 ### 范围
 
-- 同一 APK 可同时在普通 Android 启动器与 Android TV 启动器中出现。
+- 同一仓库分别产出手机 APK 与 TV APK，不再把两类启动入口合并到一个安装包。
 - 原生识别电视设备；只在电视上锁定横屏并启用电视交互模式，不改变手机版行为。
 - 保持 Kazumi Material 3 视觉语言，为十英尺观看距离增加明确的焦点描边、适度放大和自动滚动可见性。
 - 首页、时间表、追番、历史等主要内容卡片可用 D-pad 聚焦和确认键打开。
@@ -30,7 +51,7 @@ Android TV/Google TV 各自拥有适合其输入方式的界面。共享规则�
 
 ### 第一阶段验收门槛
 
-- [x] Android manifest 声明 Leanback 入口且不要求触摸屏。
+- [x] `tv` Manifest 声明 Leanback 入口且不要求触摸屏，`mobile` Manifest 只声明普通启动入口。
 - [x] 真机/模拟器能识别 TV 模式；手机模式回归不被锁定横屏。
 - [ ] 启动后无需鼠标即可进入推荐页、搜索、详情页、选择来源并开始播放。
 - [x] 所有主要聚焦项都有清晰焦点状态，长列表移动焦点时目标保持可见。
@@ -50,10 +71,18 @@ Android TV/Google TV 各自拥有适合其输入方式的界面。共享规则�
 - 清除应用数据后，只使用遥控器确认键完成四步引导并进入主界面；主界面焦点会恢复到
   搜索入口，确认键进入搜索页。方向键、确认键和 Back 也完成了侧栏→历史记录→返回的
   实机事件冒烟测试。
-- API 35 手机 AVD `Medium_Phone_API_35` 以 1080×2400 竖屏启动同一 APK，保留
-  原有底部导航和手机版布局。
+- API 35 手机 AVD `Medium_Phone_API_35` 以 1080×2400 竖屏启动最初的通用 APK，
+  保留原有底部导航和手机版布局。
 - TV 卡片确认键、焦点包装器、播放器确认键和媒体键事件分发有自动化测试覆盖；完整
   上游测试套件、静态分析和 Debug APK 构建通过。
+- flavor 拆分后，`app-mobile-debug.apk` 与 `app-tv-debug.apk` 分别构建成功；ABI
+  拆分的 mobile/TV release APK 也分别完成真实构建。
+- APK 最终 Manifest 已验证：mobile 包名为 `com.predidit.kazumi`，只有普通
+  `LAUNCHER`；TV 包名为 `com.znbsf.kazumi.tv`，只有 `LEANBACK_LAUNCHER`，并且
+  Leanback 为必需、触摸屏为非必需。
+- 独立 TV 包在 `Kazumi_TV_API_36` 冷启动并仅用确认键完成引导进入搜索；独立 mobile
+  包在 `Medium_Phone_API_35` 冷启动并保持 1080×2400 竖屏。两个包没有复用彼此的
+  Application ID 或启动入口。
 
 仍待确认：
 

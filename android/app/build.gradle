@@ -38,12 +38,17 @@ android {
         jvmTarget = '17'
     }
 
+    buildFeatures {
+        buildConfig true
+    }
+
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // The mobile flavor keeps the upstream package id for upgrade
+        // compatibility. The TV flavor overrides it so both apps can coexist.
         applicationId "com.predidit.kazumi"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
@@ -51,6 +56,21 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        manifestPlaceholders["appLabel"] = "Kazumi"
+        buildConfigField "boolean", "IS_TV_BUILD", "false"
+    }
+
+    flavorDimensions "device"
+    productFlavors {
+        mobile {
+            dimension "device"
+        }
+        tv {
+            dimension "device"
+            applicationId "com.znbsf.kazumi.tv"
+            manifestPlaceholders["appLabel"] = "Kazumi TV"
+            buildConfigField "boolean", "IS_TV_BUILD", "true"
+        }
     }
 
     buildTypes {

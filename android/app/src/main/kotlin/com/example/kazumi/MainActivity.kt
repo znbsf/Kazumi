@@ -51,9 +51,9 @@ class MainActivity: AudioServiceActivity() {
     private var originalWindowBackground: Drawable? = null
     private var windowBackgroundOverridden = false
 
-    private val actionPipPlayPause = "com.predidit.kazumi.pip.PLAY_PAUSE"
-    private val actionPipForward = "com.predidit.kazumi.pip.FORWARD"
-    private val actionPipToggleDanmaku = "com.predidit.kazumi.pip.TOGGLE_DANMAKU"
+    private val actionPipPlayPause = "${BuildConfig.APPLICATION_ID}.pip.PLAY_PAUSE"
+    private val actionPipForward = "${BuildConfig.APPLICATION_ID}.pip.FORWARD"
+    private val actionPipToggleDanmaku = "${BuildConfig.APPLICATION_ID}.pip.TOGGLE_DANMAKU"
 
     // Ratios outside [1:2.39, 2.39:1] make enterPictureInPictureMode throw.
     private val maxPipAspectRatio = 2.39f
@@ -201,7 +201,8 @@ class MainActivity: AudioServiceActivity() {
 
     private fun isTelevision(): Boolean {
         val uiMode = resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK
-        return uiMode == Configuration.UI_MODE_TYPE_TELEVISION ||
+        return BuildConfig.IS_TV_BUILD ||
+            uiMode == Configuration.UI_MODE_TYPE_TELEVISION ||
             packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
             packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
     }
