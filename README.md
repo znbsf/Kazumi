@@ -1,426 +1,277 @@
-<div align=center>
-
-<h1>Kazumi TV Fork</h1>
-
-<img src="static/tv-mark.svg" width=200></img>
-
-<a href="https://t.me/kazumi_app"><img src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white"></img></a>
-
-<img src="https://img.shields.io/badge/Flutter-03A9F4?style=for-the-badge&logo=flutter&logoColor=white"></img>
-<img src="https://img.shields.io/badge/Dart-00B4AB?style=for-the-badge&logo=Dart&logoColor=white"></img>
-<img src="https://img.shields.io/badge/Android_TV-3DDC84?style=for-the-badge&logo=android&logoColor=white"></img>
-
-<a href="https://trendshift.io/repositories/11432"><img src="https://trendshift.io/api/badge/trendshift/repositories/11432/yearly?language=Dart"></img></a>
-<a href="https://hellogithub.com/repository/Predidit/Kazumi" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=68d824ea55ee4b07aba6fe1dd61ac939&claim_uid=J9Qu6aDd8LT1nU0"/></img></a>
-
-<p>使用 Flutter 开发的基于自定义规则的番剧采集与在线观看程序。使用最多五行基于 <code>Xpath</code> 语法的选择器构建自己的规则。支持规则导入与规则分享。支持基于 <code>Anime4K</code> 的实时超分辨率。绝赞开发中 (～￣▽￣)～</p>
+<div align="center">
+  <img src="static/tv-mark.svg" alt="Kazumi TV 几何电视标识" width="144">
+  <h1>Kazumi TV</h1>
+  <p>保留 Kazumi 原有风格，为 Android TV / Google TV 适配遥控器与大屏界面。</p>
 </div>
 
-> [!IMPORTANT]
-> 这是基于 [Predidit/Kazumi](https://github.com/Predidit/Kazumi) 开发的非官方、开源
-> Android TV 分支。当前默认分支包含 TV 第一阶段能力，同时保留独立的手机版构建；
-> 手机向电视接力播放属于第二阶段，尚未在这里标记为完成。
+这是基于 [Predidit/Kazumi](https://github.com/Predidit/Kazumi) 的**非官方开源 TV fork**，
+不是上游官方电视版。源码沿用 GPL-3.0；本仓库当前发布和测试的重点是独立 TV APK。
 
-## 下载 TV 公开测试版
+**当前为 Preview 2 公开测试阶段，不是稳定版。** 手机与电视的接力播放尚未实现。
+以下状态更新于 **2026-09-06**；“已发布”“已知问题”和“后续计划”分别列出，
+后续计划不代表下载的 APK 已包含相应修复。
 
-[TV Preview 2：APK 与更新说明](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.2)
-（非稳定版，独立 TV APK）。本包带有明确标注的**本地示例弹幕**：未配置在线 API
-凭证，不等于在线弹幕服务故障，也不是当前剧集的真实评论。详见
-[测试说明与已知问题](docs/TV_PREVIEW_2.md)和[TV 默认设置审查](docs/TV_DEFAULTS.md)。
+[下载 Preview 2](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.2) ·
+[反馈问题](https://github.com/znbsf/Kazumi/issues) ·
+[UI 改进计划](#ui-plan) ·
+[阶段路线图](docs/TV_ROADMAP.md)
 
-## 版本与基本信息
+## 下载与安装
 
-以下信息依据截至 **2026-09-05** 的仓库与测试记录；公开测试包和当前开发代码分别说明。
+请到**本 fork 的发行页**下载，不要将上游手机版、其他平台安装包或 GitHub 自动生成的源码压缩包当作 TV APK。
 
-| 项目 | 信息 |
+| 项目 | Preview 2 |
 | --- | --- |
-| 项目性质 | 基于 Predidit/Kazumi 的非官方 Android TV 分支，沿用 GPL-3.0 |
-| 公开测试版本 | `v2.3.0-tv-preview.2`，应用版本 `2.3.0`，versionCode `203010`；非稳定版 |
-| TV 包名 | `com.znbsf.kazumi.tv`；与手机版 `com.predidit.kazumi` 独立安装 |
-| 公开测试 APK | universal Release，包含 `armeabi-v7a`、`arm64-v8a`、`x86_64` |
-| 技术基础 | Flutter / Dart；保留规则系统、libmpv/media-kit 播放内核和 WebView 解析链路 |
-| 弹幕状态 | Preview 2 继续带明确标注的本地示例；未配置在线弹幕 API 凭证 |
-| 后续计划 | 手机向电视接力播放尚未完成 |
+| 发行标签 | [`v2.3.0-tv-preview.2`](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.2)（Pre-release） |
+| APK | [Kazumi-TV-2.3.0-tv-preview.2-universal.apk](https://github.com/znbsf/Kazumi/releases/download/v2.3.0-tv-preview.2/Kazumi-TV-2.3.0-tv-preview.2-universal.apk)，约 66.9 MiB |
+| 应用版本 | `2.3.0` / versionCode `203010` |
+| 独立包名 | `com.znbsf.kazumi.tv`，可与原手机版共存 |
+| 架构 | `armeabi-v7a`、`arm64-v8a`、`x86_64` |
+| 系统要求 | Manifest 最低 Android 7.0 / API 24；不代表所有 Android 7+ 设备已通过测试 |
+| 弹幕 | 此预览包包含明确标注的**本地合成示例**，不是当前剧集的在线评论 |
+| 签名与升级 | 当前为测试签名；Preview 1 可覆盖升级。已安装 203010 本地测试包，无需重复安装 |
 
-### 测试设备与验证范围
+APK SHA-256：
 
-这里的 Android 版本指**设备操作系统**，不是 Kazumi 应用版本。以下为既有测试记录，
-不代表所有电视、所有来源或当前未发布改动均已通过。
+```text
+262595628b7a75a2a0d92a26b1a75f4b27fda098fd81f24d3ae167cd439dcc68
+```
 
-| 环境 | 系统 / 架构 | 已记录的验证 |
-| --- | --- | --- |
-| 小米 MiTV-ASTP0（mulan）实体电视 | Android 9 / API 28；`armeabi-v7a`；1920×1080 | Preview 2 详情页主操作与追番菜单返回、真实播放与媒体键续播、浅色选集透明/循环、OK 唤醒、可见主页入口；首页首列回侧栏未通过 |
-| Google TV 模拟器 | API 36；`x86_64`；1920×1080 | 203010 详情焦点、菜单返回、无历史选源、OK 续播并出画；长返回与播放器循环另有 203007 验证记录 |
-| 手机模拟器（早期回归） | API 35；1080×2400 | 手机版竖屏布局与独立启动入口；不作为 TV Preview 1 真机结论 |
+安装 APK 后，从电视应用列表打开 **Kazumi TV**，按提示完成初始化与规则安装，
+再选择节目和来源。来源失效或验证码问题不等于 APK 安装失败，见下方已知问题。
 
-Preview 2 发布的是已经在上述电视与 Google TV 模拟器安装的同一份 203010 APK，SHA-256 为
-`262595628b7a75a2a0d92a26b1a75f4b27fda098fd81f24d3ae167cd439dcc68`。
-发布前重新运行 216 项 Flutter 测试全部通过，修改的 Dart 文件静态分析通过。
-这些检查不能替代实际设备验收。详细记录见 [焦点回归记录](docs/TV_FOCUS_REGRESSION.md)；
-旧版构建与验收保留在 [Preview 1 测试说明](docs/TV_PREVIEW_1.md)。
+本 fork 的“检查更新”指向自己的 Releases；目前没有预览版后台自动下载安装。
+发行页的 `SHA256SUMS.txt` 用于校验，`tv_preview.json` 是示例弹幕附件，不需要另行安装。
+完整安装、升级与版本说明见 [Preview 2 说明](docs/TV_PREVIEW_2.md)。
 
-尚未完成全机型与全部遥控器、4K/HDR、长时间稳定性、在线弹幕端到端，以及各来源的
-验证码与视频解析兼容性验证。**没有 Android 14 实体电视的验证记录。**目前视频解析
-与验证码仍使用无头 WebView，TV 界面适配不等于已经解决不可见网页的兼容性问题；
-尚未确认在本测试电视上复现“无头 WebView 渲染受限导致加载失败”，也未证明所有源不受影响。
+## 已发布的 TV 适配
 
-## 这个 Fork 做了什么
+保留原有配色、圆角、海报卡片、评分信息及 libmpv / media-kit 播放内核，
+不将电视版改成另一套视觉风格。
 
-目标是在不改变 Kazumi 原有视觉语言、规则系统、弹幕和 libmpv/media-kit 播放内核的
-前提下，让它可以作为真正的 Android TV / Google TV 应用使用。
-
-| 范围 | 当前能力 |
+| 范围 | 当前实现与边界 |
 | --- | --- |
-| 独立安装 | `mobile` 与 `tv` 两个 product flavor；TV 包名为 `com.znbsf.kazumi.tv`，可与手机版共存 |
-| TV 入口 | Leanback launcher、TV banner、非必需触摸屏声明和横屏窗口 |
-| 十英尺界面 | 首页、时间表、追番、历史、设置和播放页支持 D-pad 焦点与确认键，沿用原有配色和卡片样式 |
-| 首页节目号 | TV 首页按从左到右、从上到下的顺序显示编号；数字键支持 1–999 直达、高亮预览、自动滚动和 1.8 秒多位输入等待；查找最多额外加载 5 页或 10 秒 |
-| 顶部分类 | TV 利用横向空间平铺“热门番组/日常/原创…”；左右移动时焦点放大突出，停留后刷新下方番剧 |
-| 初始化与来源 | 保留首次初始化、规则目录、规则安装、详情、播放源和选集流程 |
-| 播放器 | 播放/暂停、快进快退、上下集、选集、收藏、弹幕、详情、返回和退出均可由遥控器操作；控制层上下左右使用显式焦点拓扑，不会误把方向键当成 seek |
-| TV 播放 UI | 半透明四列选集、集中底栏与播放键旁的选集入口；当前集与遥控焦点均有描边，样式区分仍待优化；顶栏、底栏可跨行导航 |
-| 遥控器与操作设置 | TV 侧栏“遥控器”作为快捷入口；页面横向切换固定遥控器说明与可编辑的播放器通用按键，避免两套说明重复维护 |
-| 播放信息 | `INFO` 可查看实际解码通路、视频输出、GPU context、编码、像素格式、帧率、缓存和丢帧 |
-| 硬件解码 | TV 的“自动”默认走 `mediacodec_embed` 直连 Surface；显式选择 `gpu/gpu-next` 仍被保留，手机版默认逻辑不变 |
-| 弹幕 | 凭证缺失时在请求前给出明确提示；时间轴支持慢速去重、短跨度追帧和 seek/暂停后的旧任务失效 |
-| 手机兼容 | 手机版继续使用原包名和手机布局；TV 专属诊断、遥控器帮助和焦点行为不会改变手机界面 |
+| 独立电视应用 | `tv` / `mobile` 分别构建；TV 使用独立包名、Leanback 入口、横屏与 TV banner，不要求触摸屏 |
+| 首页 | 横向分类，焦点突出并联动下方内容；节目按从左到右、从上到下编号；首列返回侧栏仍有已知问题 |
+| 数字直达 | 1–999 节目号、匹配高亮、自动滚动、多位输入等待与有界查找；编号属于当前分类，不是永久频道号 |
+| 侧栏与设置 | 常驻历史入口；遥控器快捷入口通往 TV 操作设置，固定键表与通用按键设置集中展示 |
+| 详情页 | 播放、追番、吐槽移到标题下、海报右侧；默认聚焦播放；Play / PlayPause 优先续播历史，没有可用历史才选源 |
+| 播放界面 | 半透明四列选集，播放键旁提供选集入口；集中底栏、部分区域首尾循环、逐层返回与可见主页入口 |
+| 焦点与输入 | OK 唤醒控制栏并固定入口；经过发送弹幕按钮不弹键盘，明确确认输入后才打开键盘；并非所有子页面已完成遥控验收 |
+| 播放诊断 | INFO 展示实际解码 / 输出路径、编码、帧率、缓存及丢帧，而非只展示“已开启硬解”设置 |
+| TV 默认值 | 低内存模式、较小缓存预算、较长控制栏等待、减少触摸手势及动画；已有用户设置优先，不在升级时强制覆盖 |
 
-更完整的阶段边界、验证记录和第二阶段计划见
-[TV 路线图](docs/TV_ROADMAP.md)；采用的开源项目设计及取舍见
-[Android TV 开源播放器参考](docs/TV_OPEN_SOURCE_REFERENCES.md)。
+Preview 2 相比 Preview 1，重点调整了详情页主操作位置、追番菜单返回、
+选集透明与循环、播放器主页入口及详情媒体键续播。
+[逐项更新与验证范围](docs/TV_PREVIEW_2.md)不包含下方尚待实施的 UI 改进。
 
-### Preview 2 相对 Preview 1 的更新
+### 实际验证到哪里
 
-Preview 1 重点包含固定播放焦点、左栏历史与返回通路、TV 默认设置、更新入口指向本
-fork，以及独立 TV 图标；同时保留节目编号直达、横向分类、半透明选集和播放诊断。
+- **MiTV-ASTP0 / Android 9 / armv7：**203010 包验证了详情焦点、菜单返回、实际视频出画、
+  媒体键续播、浅色透明选集、OK 唤醒、弹幕按钮不自动弹键盘、可见主页入口。
+- **Google TV API 36 / x86_64 模拟器：**203010 包验证了详情操作、菜单返回、选源与续播；
+  长返回等路径另有较早构建的验证记录。
+- 发布前 216 项 Flutter 测试及修改文件静态分析通过。这是该版本的历史验证结果，
+  不是本次文档更新重新执行了应用测试。
+- 真机使用 ADB 注入键码，不等于实体遥控器全部硬件键和长按已通过。
+  **没有全机型、全部来源、4K/HDR、长期音画同步 / 内存稳定性或在线弹幕端到端的验收结论。**
 
-Preview 2 加入详情页标题下的播放/追番/吐槽操作区、默认播放焦点、追番菜单逐层返回，
-调整选集透明度与播放器循环导航，并提供可见主页入口、长返回及详情媒体键历史续播。
+完整步骤与测试边界见 [焦点回归记录](docs/TV_FOCUS_REGRESSION.md)。
+其他平台的代码仍继承自上游，但不代表本 fork 提供对应发行包或兼容性承诺；
+本轮也未新增手机版 APK。
 
-**已知问题：**首页首列左键仍可能切换顶部分组而非回侧栏；选集中的播放状态和当前焦点
-描边相似。实体遥控器长返回仍待人工验证，验证码兼容性也未解决。这些问题没有标成已修复，
-详见 [Preview 2 说明](docs/TV_PREVIEW_2.md)和[TV 路线图](docs/TV_ROADMAP.md)。
+## 当前已知问题
 
-## TV 遥控器键位
+1. **首页首列左键返回侧栏不稳定：**真机可转到顶部分组并切换分类。
+2. **选集状态和焦点难区分：**正在播放的集数与当前遥控焦点都使用相似粗绿色描边。
+3. **部分来源验证码仍不兼容：**图片加载、输入 / 按钮定位、成功检测需要分别诊断；
+   不把所有失败直接归因于同一种 WebView 问题。见 [验证码诊断计划](docs/TV_CAPTCHA_DIAGNOSTIC_PLAN.md)。
+4. **实体遥控器长返回尚待验证：**可见主页按钮已有真机验证，但厂商可能提前拦截系统键。
+5. **搜索与历史存在静态焦点风险：**下方 UI-03 / UI-04 来自代码审查，尚未完成遥控实测，
+   不将它们写成已复现或已修复。
 
-| 遥控器按键 | 动作 |
-| --- | --- |
-| 0–9 数字键（TV 首页） | 输入 1–3 位节目号；立即高亮匹配卡片，每次输入后等待 1.8 秒进入，也可按 OK 立即进入 |
-| Back（数字查找中） | 取消当前查找；切换其他主页栏目也会自动取消 |
-| OK / 下键 | 控制栏隐藏时唤醒并聚焦播放/暂停；再按 OK 执行当前按钮 |
-| 上键 | 控制栏隐藏时唤醒并聚焦选集；显示时上下左右移动焦点 |
-| Play / Pause | 播放、暂停或切换状态 |
-| Play / PlayPause（详情页） | 优先恢复已有播放历史；没有可用历史时打开选源 |
-| Fast Forward / Rewind | 快进、快退 |
-| Channel Up / Down | 下一集、上一集 |
-| EPG / Guide / Top Menu / 黄键 | 打开选集面板 |
-| CC / Captions / Audio Track / 红键 | 切换弹幕；不切换内嵌字幕轨 |
-| Favorite / Bookmark / 绿键 | 标记为“在看”或取消追番 |
-| INFO / 蓝键 | 打开视频详情与实时播放诊断 |
-| HELP / MENU / F1 / Context Menu | 打开遥控器帮助页 |
-| Back / Escape | 关闭面板或返回上一层 |
-| 长按 Back 约 1 秒后松开 | 回到应用 LCN 主页；不改变系统 Home，实体遥控器长按仍待验证 |
-| Stop / Exit / Media Close | 退出播放器 |
-| Volume / Mute | 交由 Android TV 系统处理，以兼容电视、CEC、ARC/eARC 和功放 |
+<a id="ui-plan"></a>
 
-部分电视会在应用收到事件前拦截 EPG、音量等系统保留键。Kazumi TV 会处理设备实际
-下发给应用的标准键，同时提供黄键、Top Menu 等兼容入口。
+## UI 审查与下一轮计划
 
-数字直达不会无限翻页：找到目标、数据源返回空页、额外加载 5 页、等待
-10 秒或用户取消，任一条件到达就停止。只有数据源明确到末尾才提示“没有该编号”；
-超过页数/时间上限会提示“暂未加载到”。
+这轮只记录计划，**尚未实施以下修复**。P0 优先保障可操作性；P1 优化常用路径；P2 补齐边界。
+保持原有风格，先统一焦点规则，不重新设计整套主题，也不借 UI 调整更换播放内核。
 
-## 硬件解码状态
+| 编号 / 优先级 | 证据状态 | 问题或改进方向 | 下一步与验收重点 |
+| --- | --- | --- | --- |
+| UI-01 / P0 | 真机已复现 | 首页首列左键不能稳定回侧栏 | 明确侧栏、分类、网格之间的出口；回到内容时恢复原卡片与滚动位置，不误切分类 |
+| UI-02 / P0 | 真机已复现 | “正在播放 / 已选中”与“当前焦点”描边相似 | 当前焦点保留清晰边框 / 适度突出；播放和选中状态改用不同角标、填充或文字，不能出现两个看似相同的焦点 |
+| UI-03 / P0 | 代码风险，待遥控实测 | 搜索输入区域被禁止后代聚焦 | 检查 TV 搜索入口；方向键能到达，OK 才开键盘；返回按键盘、搜索层逐层关闭并恢复入口 |
+| UI-04 / P0 | 代码风险，待遥控实测 | 历史卡片内部详情、追番、删除按钮可能不可达；编辑模式 OK 仅提示 | 卡片 OK 保持续播；提供可达的“更多”操作入口与删除确认；用模拟历史测试，不删除用户真实记录 |
+| UI-05 / P1 | 体验改进建议 | 侧栏多数项目仅图标，含义不直观 | 聚焦时显示名称或适度展开；历史、时间表、遥控器帮助容易识别，内容不因展开反复跳位 |
+| UI-06 / P1 | 体验改进建议 | 有历史时仍统一显示“开始观看” | 展示“继续观看 · 第 X 集”及已有来源 / 进度；无有效历史时保留选源，不猜测播放源 |
+| UI-07 / P1 | 体验改进建议 | 播放底栏按钮多，寻找常用功能成本高 | 常驻播放、选集、弹幕、倍速和更多；低频功能归入可达菜单，保留原遥控快捷键与返回焦点 |
+| UI-08 / P1 | 体验改进建议 | 选集面板仍有偏角落的下载悬浮入口 | 将下载入口整合到面板操作区；缩小遮挡，兼顾透明度、文字对比与焦点边框，不强制黑色主题 |
+| UI-09 / P1 | 体验改进建议 | 选源长列表混合来源、结果与操作 | 尝试左侧来源、右侧结果的横向双栏；异步结果到达不抢焦点，进入与退出都可预测 |
+| UI-10 / P1 | 代码风险及体验建议 | 部分获取失败仅记录日志，用户难区分加载阶段和失败 | 明示搜索、解析、验证、失败状态；提供可聚焦的重试 / 取消，不无限等待或无说明消失 |
+| UI-11 / P2 | 体验改进建议 | 分类横向溢出与 LCN 所属范围不够明确 | 加边缘 / 位置提示；数字浮层说明当前分类；保留已有超时、页数上限与取消机制 |
+| UI-12 / P2 | 待系统回归 | 设置及次级页面不能仅凭大屏布局认定完成 | 设置已有横向双栏，不再重复建设；逐项查左右栏、滑块、下拉框、输入框和返回恢复，并覆盖时间表、追番、下载等页面 |
 
-“启用硬件加速”只表示允许选择硬解，并不保证每个视频都一定使用硬件单元。因此 TV
-播放页通过 `INFO` 展示 mpv 的实际运行值，而不是只显示设置项：
+实施顺序：
 
-- `hwdec-current`：当前解码通路；`no` 表示软件解码；
-- `hwdec-interop`：硬解帧与视频输出的互操作方式；
-- `current-vo` / `current-gpu-context`：当前渲染器和 GPU context；
-- 视频编码、像素格式、估算帧率、缓存时长和两类丢帧计数。
+1. **操作可靠性：**先复现 UI-03 / UI-04，再修 UI-01～UI-04；有针对性的自动测试和模拟器遥控回归后再做真机抽查。
+2. **常用路径：**优先侧栏文字与续播提示，再调整播放器 / 选集入口、选源双栏及错误反馈。
+3. **边界收口：**空列表、加载失败、超长标题、大字体、720p / 1080p 布局、不满一行的网格及焦点恢复。
 
-同一 1080p 视频在已完成的实体电视 A/B 诊断中，旧的
-`mediacodec-copy + gpu` SurfaceTexture 路径只有约 `0.871x–0.915x`；TV“自动”改为
-`mediacodec_embed` 直连 Android Surface 后，实测约 `0.99990x–0.99998x`、输出丢帧为
-`0`，A/V 差约 `0.02 ms`。低码率 480p 在旧路径本来就约 `1.00075x`，所以这不是把
-所有卡顿都归因于同一个播放源，而是针对高分辨率路径的选择。
+统一验收路径为：**进入 → 方向移动 → 确认 → 子菜单 → 返回 → 恢复原焦点**。
+屏幕应只有一个明确的当前焦点；“在播 / 已选中”可以同时显示，但样式必须不同。
+区域内循环要保留跨区域出口，不能为了循环形成焦点陷阱。
+测试通过后才在后续 Release 的“本次修复”中登记，不预先勾选完成。
 
-`mediacodec_embed` 不支持 Anime4K 超分辨率，并会限制部分 mpv 视频滤镜/OSD 合成；
-因此启用直连输出时会禁用不兼容的超分辨率。用户显式选择 `gpu` / `gpu-next` 时仍尊重
-该设置，手机版的自动渲染器选择也不改变。模拟器只能验证配置、播放和 UI 路径，不能
-替代实体电视芯片上的 4K/HDR、功耗和长时间稳定性结论。
+### 两个大阶段
 
-## 弹幕凭证与同步
+- **第一阶段：独立 TV 版。**已发布 Preview 2，仍需完成上述导航、来源兼容和设备验收，不能等同于稳定版完成。
+- **第二阶段：手机与 TV 联动。**手机选择投屏 / 接力后，让电视 App 使用对应节目、来源、集数和时间点继续播放；
+  设备发现、配对、状态反馈与异常处理均待设计。上游已有的 DLNA / 同步相关代码不等于这套接力能力已经完成。
+- **后续探索：日本实际播出台标角标。**需要可靠的节目与电视台映射，以及台标资源使用边界；当前只有节目编号，没有台标。
 
-弹弹 play 开放平台要求客户端请求携带 AppId、时间戳和签名。开源仓库不会提交任何
-第三方密钥；未提供凭证的本地构建会在发出网络请求前显示“当前构建未配置弹幕服务凭证”，
-而不是发送空签名后只得到 HTTP 403。
+详细阶段台账与历史记录见 [TV 路线图](docs/TV_ROADMAP.md)。
 
-需要在线弹幕时，请使用自己申请的凭证构建：
+## Preview 2 实际截图
 
-```powershell
-flutter build apk --release --flavor tv `
-  --dart-define=DANDANAPI_APPID=你的_AppId `
-  --dart-define=DANDANAPI_KEY=你的_AppSecret
-```
-
-播放器弹幕时间轴会对同一媒体秒去重，短暂卡顿或较快播放造成的 1–3 秒跨度会补齐；
-大幅 seek、倒退、暂停和重新载入会使旧的延迟任务失效，避免旧弹幕在新时间点冒出。
-
-## 构建 TV 与手机版
-
-推荐使用 Android Studio 打开仓库根目录，通过 Device Manager 创建 Android TV 或
-Google TV AVD。项目同时保留两个 Android flavor：
-
-```bash
-# TV Debug APK
-flutter build apk --debug --flavor tv
-
-# Mobile Debug APK
-flutter build apk --debug --flavor mobile
-```
-
-带品牌和版本的 Gradle 产物：
-
-- `build/app/outputs/apk/tv/debug/Kazumi-TV-<version>-debug.apk`
-- `build/app/outputs/apk/mobile/debug/Kazumi-Mobile-<version>-debug.apk`
-
-版本号来自 `pubspec.yaml`；Flutter 还会在 `build/app/outputs/flutter-apk/`
-保留 `app-tv-debug.apk` / `app-mobile-debug.apk` 兼容副本。下载时请区分 TV / Mobile
-及 ABI；本页 Preview 2 使用包含三种 ABI 的 universal TV APK，具体文件以对应发行页为准。
-
-如果 TV AVD 无法直接访问网络，可在开发时显式复用宿主机代理：
-
-```bash
-flutter build apk --debug --flavor tv \
-  --dart-define=KAZUMI_DEV_PROXY=10.0.2.2:PORT
-```
-
-该参数只用于本地开发环境，不应写死到公开发行包。
-
-常用验证命令：
-
-```bash
-flutter test
-flutter analyze --no-fatal-infos --fatal-warnings
-flutter build apk --debug --flavor tv
-```
-
-## 支持平台
-
-- Android TV / Google TV（本 Fork 的 `tv` flavor；已记录 Android 9 实体电视和 API 36 模拟器测试，详见上方验证范围）
-- Android 手机版：上游标注 Android 10 及以上（与 TV 实测系统版本分开说明）
-- Windows 10 及以上
-- MacOS 10.15 及以上
-- Linux (实验性)
-- iOS 13 及以上 (需要 [侧载](https://kazumi.app/docs/misc/how-to-install-in-ios))
-- HarmonyOS 5.0 及以上 (位于 [分支仓库](https://github.com/ErBWs/Kazumi/releases/latest)，需要 [侧载](https://kazumi.app/docs/misc/how-to-install-in-ohos))
-
-## 屏幕截图
+以下为 **203010 实体电视截图**，不是设计稿；选集图保留了尚未修复的双描边问题。
 
 <table>
   <tr>
-    <td><img alt="Preview 2 实体电视 LCN 首页" src="static/screenshot/tv_preview2_home.png"></td>
-    <td><img alt="Preview 2 详情页默认播放焦点" src="static/screenshot/tv_preview2_detail.png"></td>
+    <td><img alt="Preview 2：横向分类与 LCN 首页" src="static/screenshot/tv_preview2_home.png"></td>
+    <td><img alt="Preview 2：海报旁详情操作与默认播放焦点" src="static/screenshot/tv_preview2_detail.png"></td>
   </tr>
   <tr>
-    <td><img alt="Preview 2 透明选集与已知双描边问题" src="static/screenshot/tv_preview2_episodes.png"></td>
-    <td><img alt="Preview 2 OK 唤醒播放焦点" src="static/screenshot/tv_preview2_controls.png"></td>
-  </tr>
-  <tr>
-    <td><img alt="Preview 1 遥控器与操作设置" src="static/screenshot/tv_remote_help.png"></td>
-    <td><img alt="Preview 1 左侧栏历史记录" src="static/screenshot/tv_history.png"></td>
+    <td><img alt="Preview 2：透明选集，仍有状态与焦点双描边" src="static/screenshot/tv_preview2_episodes.png"></td>
+    <td><img alt="Preview 2：OK 唤醒后的集中播放器底栏" src="static/screenshot/tv_preview2_controls.png"></td>
   </tr>
 </table>
 
-> 前四张是 Preview 2 / 203010 在 MiTV-ASTP0 的实际截图；最后两张保留 Preview 1 的
-> Google TV API 36 AVD 历史记录。均为 1920×1080。本地示例弹幕不代表在线服务验证；
-> 选集图也保留了播放状态与焦点同样描边的已知问题。
+## 遥控器速查
 
-## 功能 / 开发计划
+应用侧栏“遥控器”是操作设置的快捷入口；固定 TV 键表与可编辑通用按键集中在同一处。
 
-- [X]  规则编辑器
-- [X]  番剧目录
-- [X]  番剧搜索
-- [X]  番剧时间表
-- [X]  番剧字幕
-- [X]  分集播放
-- [X]  视频播放器
-- [X]  多视频源支持
-- [X]  规则分享
-- [X]  硬件加速
-- [X]  高刷适配
-- [X]  追番列表
-- [X]  番剧弹幕
-- [X]  在线更新
-- [X]  历史记录
-- [X]  倍速播放
-- [X]  配色方案
-- [X]  跨设备同步
-- [X]  无线投屏 (DLNA)
-- [X]  外部播放器播放
-- [X]  超分辨率
-- [X]  一起看
-- [X]  番剧下载
-- [X]  TV 首页节目号和数字键直达
-- [X]  TV 首页横向分类栏和焦点联动
-- [X]  TV 遥控器说明与操作设置合并页
-- [ ]  卡片展示日本实际播出电视台台标（待确定节目映射、台标授权和更新数据源）
-- [ ]  手机与 TV 发现、配对和按节目/来源/集数/时间点接力播放
-- [ ]  番剧更新提醒
-- [ ]  还有更多 (/・ω・＼)
+| 按键 / 场景 | 动作 |
+| --- | --- |
+| 数字 0–9：首页 | 输入 1–3 位节目号；1.8 秒等待多位输入，OK 可立即确认 |
+| Back：数字查找中 | 取消本次查找；切换其他主页栏目也会取消 |
+| OK / 下键：控制栏隐藏 | 唤醒并聚焦播放 / 暂停；再次 OK 执行当前按钮，唤醒本身不暂停 |
+| 上键：控制栏隐藏 | 唤醒并聚焦选集；控制栏显示时方向键用于移动焦点 |
+| Play / Pause / PlayPause | 播放 / 暂停；详情页 Play / PlayPause 优先续播，无可用历史则选源 |
+| Fast Forward / Rewind；Channel Up / Down | 快进 / 快退；下一集 / 上一集 |
+| EPG / Guide / Top Menu / 黄键 | 打开选集 |
+| CC / Captions / Audio Track / 红键 | 开关弹幕，不切换内嵌字幕轨 |
+| Favorite / Bookmark / 绿键 | 标记为“在看”或取消追番 |
+| INFO / 蓝键 | 视频信息与实际播放诊断 |
+| HELP / MENU / F1 / Context Menu | 遥控器帮助 |
+| Back / Escape | 关闭当前层或返回；长按 Back 约 1 秒后松开回应用首页，实体遥控长按待验证 |
+| Stop / Exit / Media Close | 退出播放器 |
+| Volume / Mute；系统 Home | 音量 / 静音交给系统；Home 仍回系统桌面，不被改成应用首页 |
 
-## 下载
+数字查找在找到目标、数据源返回空页、额外加载 **5 页**、等待 **10 秒**或用户取消时停止。
+只有明确到末尾才提示“没有该编号”；达到限制提示“暂未加载到”，不会无限查找。
 
-### Kazumi TV Fork
+厂商拦截的 EPG、音量等按键可能根本不会送达 App；提供替代入口不等于能够抢占系统键。
+播放器的**可见主页按钮**可直接回 LCN 首页，无需依赖长按或特殊遥控器键。
 
-当前 TV 版以源码和 Debug 构建验证为主，暂未发布正式签名 APK。后续发行包会放在本
-Fork 的 [Releases](https://github.com/znbsf/Kazumi/releases)；现在可按上面的 `tv`
-flavor 命令自行构建。
+## 播放与弹幕边界
 
-### 上游 Kazumi 正式版
+### 电视默认值和硬件解码
 
-手机版稳定发行请通过上游
-[Predidit/Kazumi Releases](https://github.com/Predidit/Kazumi/releases/latest) 下载：
+TV 默认启用低内存模式，调整的是压缩数据缓存预算，并不等于整个进程的内存上限。
+已有有效设置优先；升级不重置个人配置，详见 [TV 默认设置审查](docs/TV_DEFAULTS.md)。
 
-<a href="https://github.com/Predidit/Kazumi/releases">
-  <img src="static/svg/get_it_on_github.svg" alt="Get it on Github" width="200"/>
-</a>
+TV 自动视频输出采用 `mediacodec_embed` 直连 Surface，保留用户显式选择的
+`gpu` / `gpu-next`。启用硬件加速不保证所有编码都硬解，应通过 INFO 查看
+`hwdec-current`、`current-vo` 等实际运行值。
+直连路径不兼容 Anime4K 超分辨率及部分视频滤镜，不把“实时超分”作为本 TV 包的默认能力。
+短程出画、模拟器通过与长期音画 / 4K / HDR 验收是不同结论。
 
-### Android
+### 本地示例不是在线弹幕
 
-<a href="https://f-droid.org/packages/com.predidit.kazumi">
-  <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on-zh-hans.svg"
-  alt="Get it on F-Droid" width="200">
-</a>
+Preview 2 显式嵌入合成弹幕，每条标有 **[本地示例]**，用于暂停、seek、续播和同步测试。
+本包没有配置在线弹幕 API 的 AppID 与签名 Key；**只有 AppID 不足以签名**，
+这不代表弹弹 Play 服务故障，也不是当前剧集的真实评论。
 
-### GNU/Linux
+可通过 CC / 红键关闭弹幕，或在“我的 → 弹幕设置 → 本地示例弹幕”关闭示例并重新进入播放。
+关闭示例不会自动恢复在线弹幕。普通构建不会嵌入示例；示例不发送到服务器、不写入下载缓存。
 
-<a href="https://flathub.org/apps/io.github.Predidit.Kazumi">
-  <img src="https://flathub.org/api/badge?svg&locale=zh-Hans" alt="Get it on Flathub" width="175"/>
-</a>
+在线构建需使用获授权的 `DANDANAPI_APPID` 与 `DANDANAPI_KEY`，不得把上游身份或密钥视为
+fork 自动可用的凭证。仓库不提交密钥；配置凭证后仍需单独完成在线端到端验证。
 
-#### Arch Linux
+## 开发与构建
 
-可以从 [AUR](http://aur.archlinux.org) 安装。
+项目使用 Flutter / Dart，可用 **Android Studio + Flutter / Dart 插件**打开仓库根目录。
+通过 Device Manager 创建 Android TV / Google TV AVD；模拟器适合 UI 与遥控器回归，
+不能代替真实电视芯片的解码性能和硬件键验证。
 
-##### AUR
+使用与 [pubspec.yaml](pubspec.yaml) 对齐的 Flutter SDK（当前声明 3.47.2），配置 Android SDK / JDK。
+两个 flavor 共享业务代码，但分别生成 APK：`tv` 是电视版，`mobile` 保留手机版布局与原包名，
+不是把两种安装入口塞进同一个发行 APK。
 
-```bash
-[yay/paru] -S kazumi # 从源码构建
-[yay/paru] -S kazumi-bin # 二进制包
+```powershell
+flutter pub get
+
+# TV 模拟器调试
+flutter run --flavor tv -d <TV模拟器ID>
+
+# 普通 TV Release，不嵌入本地示例
+flutter build apk --release --flavor tv --build-number 203010
+
+# 本地预览构建：显式嵌入合成示例
+./scripts/build-tv-preview.ps1 -Flutter flutter -BuildNumber 203010
+
+# 仅在需要回归手机版时构建
+flutter build apk --debug --flavor mobile
+
+# 自动测试与静态分析
+flutter test
+flutter analyze --no-fatal-infos --fatal-warnings
 ```
 
-## 贡献
+`203010` 对应当前预览版本；下一次发布应用改动时应递增 build number。
+本地构建输出见 `build/app/outputs/flutter-apk/` 与 `build/app/outputs/apk/tv/`，
+Gradle 命名包含 `Kazumi-TV`；发行页的 Preview 文件名由发布环节明确命名。
 
-欢迎向我们的 [规则仓库](https://github.com/Predidit/KazumiRules) 提交您的自定义规则。您可以自由选择是否在规则中留下您的ID。详细的规则编写教程可以参考 [规则开发文档](https://kazumi.app/docs/rules/develop-rules)
+**自行构建不等于能覆盖安装公开 APK：**当前 Gradle 使用本机 debug keystore 作测试签名，
+不同机器签名可能不同；发行测试签名私钥不在仓库中分发。
+正式发行签名与后续升级策略仍需单独管理，不能把 `--release` 构建模式当作正式签名保证。
 
-## Q&A
+## 反馈、文档与发布约定
 
-<details>
-<summary>使用者 Q&A</summary>
+请在 [本 fork Issues](https://github.com/znbsf/Kazumi/issues) 提供：
+电视型号、系统版本、APK versionCode、按键顺序、预期 / 实际结果；有截图更容易复现。
+播放问题请区分来源加载、实际出画、音画同步与遥控操作。
 
-#### Q: 为什么少数番剧中有广告？
+不要公开账号、Cookie、验证码答案、API Key、鉴权链接或未脱敏原始日志。
+App 会访问选定的来源及元数据等外部服务；不能把开源或本地历史存储理解为完全离线运行。
 
-A: 本项目未插入任何广告。广告来自视频源, 请不要相信广告中的任何内容, 并尽量选择没有广告的视频源观看。
+- [Preview 2 安装、更新和测试边界](docs/TV_PREVIEW_2.md)
+- [阶段路线图与历史验收台账](docs/TV_ROADMAP.md)
+- [焦点与设备回归记录](docs/TV_FOCUS_REGRESSION.md)
+- [TV 默认设置](docs/TV_DEFAULTS.md)
+- [验证码诊断待办](docs/TV_CAPTCHA_DIAGNOSTIC_PLAN.md)
+- [开源播放器参考与设计取舍](docs/TV_OPEN_SOURCE_REFERENCES.md)
+- [贡献指引](static/doc/CONTRIBUTING.md)
 
-#### Q: 为什么我启用超分辨率功能后播放卡顿？
+**README 记录当前状态与计划；Release 记录对应 APK 已包含的改动。**
+发布后发现的问题可以带日期补充到发行说明，但不能改写成该版本已修复。
+仅文档更新不重打 APK、不改标签、不冒充新版本；应用有变化时才构建、验证并发布下一版。
+本 fork 的公开预览发行只提供 TV APK、校验文件、合成示例与对应源码，不沿用上游多平台下载宣传。
 
-A: 超分辨率功能对 GPU 性能要求较高, 如果没有在高性能独立显卡上运行 Kazumi, 尽量选择效率档而非质量档。对低分辨率视频源而非高分辨率视频源使用超分也可以降低性能消耗。
+## 上游、许可证与资源署名
 
-#### Q: 为什么播放视频时内存占用较高？
+感谢 [Predidit/Kazumi](https://github.com/Predidit/Kazumi) 及其
+[贡献者](https://github.com/Predidit/Kazumi/graphs/contributors) 提供项目基础。
+本 fork 继续遵守 [GPL-3.0](LICENSE)，对应发行源码保留在各 Release 标签中；
+上游官网、社区、奖项、赞助和 Windows 签名服务不代表本 fork 获得相同支持。
 
-A: 本程序在视频播放时, 会尽可能多地缓存视频到内存, 以提供较好的观看体验。如果您的内存较为紧张, 可以在播放设置选项卡启用低内存模式, 这将限制缓存。
+TV APK 使用本 fork 原创几何电视标识（GPL-3.0），不打包上游人物图标。
+源码保留的上游图标来自 [Yuquanaaa](https://www.pixiv.net/users/66219277) 的
+[Pixiv 作品](https://www.pixiv.net/artworks/116666979)，版权属于原作者，不能据上游的使用许可推定
+本 fork 或其他分发者也获得授权。字体 Mi Sans 由 Xiaomi 开发并拥有相关权利，沿用其资源许可。
 
-#### Q: 为什么少数番剧无法通过外部播放器观看？
-
-A: 部分视频源的番剧使用了反盗链措施, 这可以被 Kazumi 解决, 但无法被外部播放器解决。
-
-#### Q: 为什么下载的 Linux 版本缺少图标和托盘功能？
-
-A: 使用 .deb 版本进行安装, tar.gz 版本仅为方便二次打包, 这一格式先天缺乏图标和托盘功能支持。
-
-</details>
-
-<details>
-<summary>规则编写者 Q&A</summary>
-
-#### Q: 为什么我的自定义规则无法实现检索？
-
-A: 目前我们对 `Xpath` 语法的支持并不完整, 我们目前只支持以 `//` 开头的选择器。建议参照我们给出的示例规则构建自定义规则。
-
-#### Q: 为什么我的自定义规则可以实现检索, 但不能实现观看？
-
-A: 尝试关闭自定义规则的使用内置播放器选项, 这将尝试使用 `webview` 进行播放, 提高兼容性。但在内置播放器可用时, 建议启用内置播放器, 以获得更加流畅并带有弹幕的观看体验。
-
-</details>
-
-<details>
-<summary>开发者 Q&A</summary>
-
-#### Q: 我在尝试自行编译该项目, 但编译没有成功。
-
-A: 本项目编译需要良好的网络环境, 除了由 Google 托管的 Flutter 相关依赖外, 本项目同样依赖托管在 MavenCentral/Github/SourceForge 上的资源。如果您位于中国大陆, 可能需要设置恰当的镜像地址。
-
-</details>
-
-## 开发
-
-欢迎您提交 PR！在开始之前, 请阅读 [贡献指引](static/doc/CONTRIBUTING.md) 以了解我们对 PR 和 AI 参与辅助开发的规定。
-
-## 美术资源
-
-本 fork 的 TV 发行 APK 使用独立原创几何电视标识（GPL-3.0），不打包上游人物图标。
-以下为保留的上游图标署名及限制，不意味着其授权自动延伸到 fork：
-
-上游项目图标来自 [Yuquanaaa](https://www.pixiv.net/users/66219277) 发表在 [Pixiv](https://www.pixiv.net/artworks/116666979) 上的作品。
-
-此图标由其原作者 [Yuquanaaa](https://www.pixiv.net/users/66219277) 拥有版权。我们已获得原作者的授权和许可, 可以在本项目中使用这一图标。这一图标不是自由使用的, 未经原作者明确授权, 任何人不得擅自使用、复制、修改或分发这一图标。
-
-本项目内嵌字体为 [Mi Sans](https://hyperos.mi.com/font/zh/details/sc/) 字体, 由 [Xiaomi](https://www.mi.com/index.html) 开发和拥有版权。
-
-## 免责声明
-
-本项目基于 GNU 通用公共许可证第 3 版（GPL-3.0）授权。我们不对其适用性、可靠性或准确性作出任何明示或暗示的保证。在法律允许的最大范围内, 作者和贡献者不承担任何因使用本软件而产生的直接、间接、偶然、特殊或后果性的损害赔偿责任。
-
-使用本项目需遵守所在地法律法规, 不得进行任何侵犯第三方知识产权的行为。因使用本项目而产生的数据和缓存应在24小时内清除, 超出 24 小时的使用需获得相关权利人的授权。
-
-## 隐私政策
-
-我们不收集任何用户数据, 不使用任何遥测组件。
-
-## 代码签名策略
-
-提交者: [贡献者](https://github.com/Predidit/Kazumi/graphs/contributors)
-审阅者: [所有者](https://github.com/Predidit)
-
-## 赞助
-
-
-| ![signpath](https://signpath.org/assets/favicon-50x50.png)                                                                                                                      | Free code signing on Windows provided by[SignPath.io](https://about.signpath.io/), certficate by [SignPath Foundation](https://signpath.org/) |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| <img src="https://kilo.ai/favicon/favicon.svg" width="50">                                                                                                                      | **Automatic PR review provided by [Kilo Code](https://kilo.ai/), sponsored by the [Kilo OSS Program](https://kilo.ai/oss)**                   |
-| <a href="https://m.do.co/c/0062035db3e4"><img src="https://opensource.nyc3.cdn.digitaloceanspaces.com/attribution/assets/SVG/DO_Logo_icon_blue.svg" width="50" height="50"></a> | **Cloud infrastructure is supported by [DigitalOcean](https://m.do.co/c/0062035db3e4)**                                                       |
-
-## 致谢
-
-特别感谢 [XpathSelector](https://github.com/simonkimi/xpath_selector) 这个优秀的项目是本项目的基石。
-
-特别感谢 [弹弹play](https://www.dandanplay.com/) 本项目使用了 弹弹play开放平台 以提供弹幕交互。
-
-特别感谢 [Bangumi](https://bangumi.tv/) 本项目使用了 Bangumi 开放 API 以提供番剧元数据。
-
-特别感谢 [Anime4K](https://github.com/bloc97/Anime4K) 本项目使用 Anime4K 进行实时超分。
-
-特别感谢 [SyncPlay](https://github.com/Syncplay/syncplay) 本项目使用 SyncPlay 协议并通过 SyncPlay 公共服务器实现一起看功能。
-
-特别感谢 [所有贡献者](https://github.com/Predidit/Kazumi/graphs/contributors) 本项目因为你们变得更好。
-
-特别感谢 [trace.moe](https://trace.moe) 本项目使用了 trace.moe 提供的图片识别番剧功能。
-
-感谢 [media-kit](https://github.com/media-kit/media-kit) 本项目跨平台媒体播放能力来自 media-kit。
-
-感谢 [avbuild](https://github.com/wang-bin/avbuild) 本项目使用了来自 avbuild 的树外补丁实现非标准视频流播放。
-
-感谢 [hive](https://github.com/isar/hive) 本项目持久化储存能力来自 hive。
+感谢继承使用的开源项目与服务，包括 media-kit / libmpv、XpathSelector、Hive、avbuild、
+Bangumi、弹弹 Play、Anime4K、Syncplay 与 trace.moe。依赖或代码的存在不代表相关功能
+已经在 TV 预览版完成验收。软件许可不授予第三方视频、评论、图片或台标的内容使用权；
+请遵守相应服务条款和资源许可，软件按 [LICENSE](LICENSE) 所述提供。
