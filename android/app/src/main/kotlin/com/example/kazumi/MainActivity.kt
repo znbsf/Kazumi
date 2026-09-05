@@ -15,6 +15,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
 import android.os.StatFs
+import android.os.SystemClock
 import android.net.Uri
 import android.app.PictureInPictureParams
 import android.graphics.drawable.Icon
@@ -25,6 +26,7 @@ import android.view.View
 import androidx.annotation.NonNull
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import io.flutter.embedding.engine.FlutterEngine
@@ -42,6 +44,9 @@ class MainActivity: AudioServiceActivity() {
     private var pipChannel: MethodChannel? = null
     private var tvRemoteChannel: MethodChannel? = null
     private var tvRemotePlayerActive = false
+    private var tvNavigationChannel: MethodChannel? = null
+    private var tvNavigationActive = false
+    private var tvBackDownAt: Long? = null
 
     private var pipIsPlaying = false
     private var pipDanmakuEnabled = false
@@ -92,12 +97,35 @@ class MainActivity: AudioServiceActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        if (!hasFocus) tvBackDownAt = null
         if (hasFocus && androidFullscreen) {
             applySystemBarsState()
         }
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (tvNavigationActive && isTelevision() && event.keyCode == KeyEvent.KEYCODE_BACK) {
+            // IME gets normal BACK handling. Never navigate home while typing.
+            val imeVisible = ViewCompat.getRootWindowInsets(window.decorView)
+                ?.isVisible(WindowInsetsCompat.Type.ime()) == true
+            if (!imeVisible) {
+                if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    tvBackDownAt = SystemClock.uptimeMillis()
+                } else if (event.action == KeyEvent.ACTION_UP) {
+                    val startedAt = tvBackDownAt
+                    tvBackDownAt = null
+                    if (!event.isCanceled && startedAt != null) {
+                        tvNavigationChannel?.invokeMethod(
+                            // Older input injectors preserve DOWN's eventTime
+                            // on UP; measure the actual held interval instead.
+                            if (SystemClock.uptimeMillis() - startedAt >= 900) "home" else "back", null,
+                        )
+                    }
+                }
+                return true
+            }
+            tvBackDownAt = null
+        }
         if (BuildConfig.DEBUG && isTelevision() && event.action == KeyEvent.ACTION_DOWN) {
             Log.d(
                 "KazumiTvRemote",
@@ -213,6 +241,19 @@ class MainActivity: AudioServiceActivity() {
                 if (BuildConfig.DEBUG) {
                     Log.d("KazumiTvRemote", "playerActive=$tvRemotePlayerActive")
                 }
+                result.success(null)
+            } else {
+                result.notImplemented()
+            }
+        }
+        tvNavigationChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.predidit.kazumi/tv_navigation",
+        )
+        tvNavigationChannel?.setMethodCallHandler { call, result ->
+            if (call.method == "setActive") {
+                tvNavigationActive = call.arguments == true
+                tvBackDownAt = null
                 result.success(null)
             } else {
                 result.notImplemented()

@@ -1,6 +1,6 @@
 param(
     [string]$Flutter = 'flutter',
-    [int]$BuildNumber = 203004
+    [int]$BuildNumber = 203010
 )
 $ErrorActionPreference = 'Stop'
 $repoPath = Split-Path -Parent $PSScriptRoot

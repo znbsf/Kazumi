@@ -8,6 +8,7 @@ import 'package:kazumi/pages/menu/route_visibility.dart';
 import 'package:kazumi/pages/router.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
 import 'package:kazumi/services/platform/tv_channel_input.dart';
+import 'package:kazumi/bean/widget/tv_focus_navigation.dart';
 
 class ScaffoldMenu extends StatefulWidget {
   const ScaffoldMenu({super.key});
@@ -177,7 +178,8 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
               return KeyEventResult.ignored;
             }
             if (current != null &&
-                !current.focusInDirection(TraversalDirection.left)) {
+                !ReadingOrderTraversalPolicy()
+                    .inDirection(current, TraversalDirection.left)) {
               _railFocusScope.requestFocus();
             }
             return KeyEventResult.handled;
@@ -244,11 +246,56 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
             child: FocusScope(
               node: _railFocusScope,
               onKeyEvent: (_, event) {
-                if (TvMode.enabled &&
-                    (event is KeyDownEvent || event is KeyRepeatEvent) &&
-                    event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                if (!TvMode.enabled ||
+                    (event is! KeyDownEvent && event is! KeyRepeatEvent)) {
+                  return KeyEventResult.ignored;
+                }
+                final current = FocusManager.instance.primaryFocus;
+                if (current == null) return KeyEventResult.ignored;
+                final nodes = _railFocusScope.traversalDescendants.toList()
+                  ..sort(
+                      (a, b) => a.rect.center.dy.compareTo(b.rect.center.dy));
+                final index = nodes.indexOf(current);
+                if (index >= 0 &&
+                    (event.logicalKey == LogicalKeyboardKey.arrowUp ||
+                        event.logicalKey == LogicalKeyboardKey.arrowDown)) {
+                  nodes[tvWrappedIndex(
+                          index,
+                          event.logicalKey == LogicalKeyboardKey.arrowUp
+                              ? -1
+                              : 1,
+                          nodes.length)]
+                      .requestFocus();
+                  return KeyEventResult.handled;
+                }
+                if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
                   _railFocusScope.directionalTraversalEdgeBehavior =
                       TraversalEdgeBehavior.parentScope;
+                  ReadingOrderTraversalPolicy()
+                      .inDirection(current, TraversalDirection.right);
+                  return KeyEventResult.handled;
+                }
+                if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                  final candidates = _railFocusScope
+                          .enclosingScope?.traversalDescendants
+                          .where((node) =>
+                              node.context != null &&
+                              !node.ancestors.contains(_railFocusScope))
+                          .toList() ??
+                      <FocusNode>[];
+                  candidates.sort((a, b) {
+                    final horizontal =
+                        b.rect.center.dx.compareTo(a.rect.center.dx);
+                    return horizontal != 0
+                        ? horizontal
+                        : (a.rect.center.dy - current.rect.center.dy)
+                            .abs()
+                            .compareTo(
+                                (b.rect.center.dy - current.rect.center.dy)
+                                    .abs());
+                  });
+                  if (candidates.isNotEmpty) candidates.first.requestFocus();
+                  return KeyEventResult.handled;
                 }
                 return KeyEventResult.ignored;
               },

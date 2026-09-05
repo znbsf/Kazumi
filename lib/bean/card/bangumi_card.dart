@@ -18,6 +18,7 @@ class BangumiCardV extends StatelessWidget {
     this.highlighted = false,
     this.focusNode,
     this.onPressed,
+    this.onKeyEvent,
   });
 
   final BangumiItem bangumiItem;
@@ -27,6 +28,7 @@ class BangumiCardV extends StatelessWidget {
   final bool highlighted;
   final FocusNode? focusNode;
   final VoidCallback? onPressed;
+  final FocusOnKeyEventCallback? onKeyEvent;
 
   @override
   Widget build(BuildContext context) {
@@ -96,6 +98,7 @@ class BangumiCardV extends StatelessWidget {
     );
     return TvFocusableSurface(
       onPressed: openBangumi,
+      onKeyEvent: onKeyEvent,
       focusNode: focusNode,
       highlighted: highlighted,
       child: card,

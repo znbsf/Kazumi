@@ -23,10 +23,46 @@
 
 ## 下载 TV 公开测试版
 
-[TV Preview 1：APK 与更新说明](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.1)
+[TV Preview 2：APK 与更新说明](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.2)
 （非稳定版，独立 TV APK）。本包带有明确标注的**本地示例弹幕**：未配置在线 API
 凭证，不等于在线弹幕服务故障，也不是当前剧集的真实评论。详见
-[测试说明](docs/TV_PREVIEW_1.md)和[TV 默认设置审查](docs/TV_DEFAULTS.md)。
+[测试说明与已知问题](docs/TV_PREVIEW_2.md)和[TV 默认设置审查](docs/TV_DEFAULTS.md)。
+
+## 版本与基本信息
+
+以下信息依据截至 **2026-09-05** 的仓库与测试记录；公开测试包和当前开发代码分别说明。
+
+| 项目 | 信息 |
+| --- | --- |
+| 项目性质 | 基于 Predidit/Kazumi 的非官方 Android TV 分支，沿用 GPL-3.0 |
+| 公开测试版本 | `v2.3.0-tv-preview.2`，应用版本 `2.3.0`，versionCode `203010`；非稳定版 |
+| TV 包名 | `com.znbsf.kazumi.tv`；与手机版 `com.predidit.kazumi` 独立安装 |
+| 公开测试 APK | universal Release，包含 `armeabi-v7a`、`arm64-v8a`、`x86_64` |
+| 技术基础 | Flutter / Dart；保留规则系统、libmpv/media-kit 播放内核和 WebView 解析链路 |
+| 弹幕状态 | Preview 2 继续带明确标注的本地示例；未配置在线弹幕 API 凭证 |
+| 后续计划 | 手机向电视接力播放尚未完成 |
+
+### 测试设备与验证范围
+
+这里的 Android 版本指**设备操作系统**，不是 Kazumi 应用版本。以下为既有测试记录，
+不代表所有电视、所有来源或当前未发布改动均已通过。
+
+| 环境 | 系统 / 架构 | 已记录的验证 |
+| --- | --- | --- |
+| 小米 MiTV-ASTP0（mulan）实体电视 | Android 9 / API 28；`armeabi-v7a`；1920×1080 | Preview 2 详情页主操作与追番菜单返回、真实播放与媒体键续播、浅色选集透明/循环、OK 唤醒、可见主页入口；首页首列回侧栏未通过 |
+| Google TV 模拟器 | API 36；`x86_64`；1920×1080 | 203010 详情焦点、菜单返回、无历史选源、OK 续播并出画；长返回与播放器循环另有 203007 验证记录 |
+| 手机模拟器（早期回归） | API 35；1080×2400 | 手机版竖屏布局与独立启动入口；不作为 TV Preview 1 真机结论 |
+
+Preview 2 发布的是已经在上述电视与 Google TV 模拟器安装的同一份 203010 APK，SHA-256 为
+`262595628b7a75a2a0d92a26b1a75f4b27fda098fd81f24d3ae167cd439dcc68`。
+发布前重新运行 216 项 Flutter 测试全部通过，修改的 Dart 文件静态分析通过。
+这些检查不能替代实际设备验收。详细记录见 [焦点回归记录](docs/TV_FOCUS_REGRESSION.md)；
+旧版构建与验收保留在 [Preview 1 测试说明](docs/TV_PREVIEW_1.md)。
+
+尚未完成全机型与全部遥控器、4K/HDR、长时间稳定性、在线弹幕端到端，以及各来源的
+验证码与视频解析兼容性验证。**没有 Android 14 实体电视的验证记录。**目前视频解析
+与验证码仍使用无头 WebView，TV 界面适配不等于已经解决不可见网页的兼容性问题；
+尚未确认在本测试电视上复现“无头 WebView 渲染受限导致加载失败”，也未证明所有源不受影响。
 
 ## 这个 Fork 做了什么
 
@@ -42,7 +78,7 @@
 | 顶部分类 | TV 利用横向空间平铺“热门番组/日常/原创…”；左右移动时焦点放大突出，停留后刷新下方番剧 |
 | 初始化与来源 | 保留首次初始化、规则目录、规则安装、详情、播放源和选集流程 |
 | 播放器 | 播放/暂停、快进快退、上下集、选集、收藏、弹幕、详情、返回和退出均可由遥控器操作；控制层上下左右使用显式焦点拓扑，不会误把方向键当成 seek |
-| TV 播放 UI | 初始选集面板缩为半透明四列卡片；当前集与遥控器焦点分别可见；顶栏、底栏控件都有高亮描边并可跨行连续导航 |
+| TV 播放 UI | 半透明四列选集、集中底栏与播放键旁的选集入口；当前集与遥控焦点均有描边，样式区分仍待优化；顶栏、底栏可跨行导航 |
 | 遥控器与操作设置 | TV 侧栏“遥控器”作为快捷入口；页面横向切换固定遥控器说明与可编辑的播放器通用按键，避免两套说明重复维护 |
 | 播放信息 | `INFO` 可查看实际解码通路、视频输出、GPU context、编码、像素格式、帧率、缓存和丢帧 |
 | 硬件解码 | TV 的“自动”默认走 `mediacodec_embed` 直连 Surface；显式选择 `gpu/gpu-next` 仍被保留，手机版默认逻辑不变 |
@@ -53,6 +89,18 @@
 [TV 路线图](docs/TV_ROADMAP.md)；采用的开源项目设计及取舍见
 [Android TV 开源播放器参考](docs/TV_OPEN_SOURCE_REFERENCES.md)。
 
+### Preview 2 相对 Preview 1 的更新
+
+Preview 1 重点包含固定播放焦点、左栏历史与返回通路、TV 默认设置、更新入口指向本
+fork，以及独立 TV 图标；同时保留节目编号直达、横向分类、半透明选集和播放诊断。
+
+Preview 2 加入详情页标题下的播放/追番/吐槽操作区、默认播放焦点、追番菜单逐层返回，
+调整选集透明度与播放器循环导航，并提供可见主页入口、长返回及详情媒体键历史续播。
+
+**已知问题：**首页首列左键仍可能切换顶部分组而非回侧栏；选集中的播放状态和当前焦点
+描边相似。实体遥控器长返回仍待人工验证，验证码兼容性也未解决。这些问题没有标成已修复，
+详见 [Preview 2 说明](docs/TV_PREVIEW_2.md)和[TV 路线图](docs/TV_ROADMAP.md)。
+
 ## TV 遥控器键位
 
 | 遥控器按键 | 动作 |
@@ -62,6 +110,7 @@
 | OK / 下键 | 控制栏隐藏时唤醒并聚焦播放/暂停；再按 OK 执行当前按钮 |
 | 上键 | 控制栏隐藏时唤醒并聚焦选集；显示时上下左右移动焦点 |
 | Play / Pause | 播放、暂停或切换状态 |
+| Play / PlayPause（详情页） | 优先恢复已有播放历史；没有可用历史时打开选源 |
 | Fast Forward / Rewind | 快进、快退 |
 | Channel Up / Down | 下一集、上一集 |
 | EPG / Guide / Top Menu / 黄键 | 打开选集面板 |
@@ -70,6 +119,7 @@
 | INFO / 蓝键 | 打开视频详情与实时播放诊断 |
 | HELP / MENU / F1 / Context Menu | 打开遥控器帮助页 |
 | Back / Escape | 关闭面板或返回上一层 |
+| 长按 Back 约 1 秒后松开 | 回到应用 LCN 主页；不改变系统 Home，实体遥控器长按仍待验证 |
 | Stop / Exit / Media Close | 退出播放器 |
 | Volume / Mute | 交由 Android TV 系统处理，以兼容电视、CEC、ARC/eARC 和功放 |
 
@@ -137,8 +187,8 @@ flutter build apk --debug --flavor mobile
 - `build/app/outputs/apk/mobile/debug/Kazumi-Mobile-<version>-debug.apk`
 
 版本号来自 `pubspec.yaml`；Flutter 还会在 `build/app/outputs/flutter-apk/`
-保留 `app-tv-debug.apk` / `app-mobile-debug.apk` 兼容副本。GitHub 发行包使用
-`Kazumi-TV-<tag>-arm64-v8a.apk` 和 `Kazumi-Mobile-<tag>-arm64-v8a.apk`，避免两个 APK 混淆。
+保留 `app-tv-debug.apk` / `app-mobile-debug.apk` 兼容副本。下载时请区分 TV / Mobile
+及 ABI；本页 Preview 2 使用包含三种 ABI 的 universal TV APK，具体文件以对应发行页为准。
 
 如果 TV AVD 无法直接访问网络，可在开发时显式复用宿主机代理：
 
@@ -159,8 +209,8 @@ flutter build apk --debug --flavor tv
 
 ## 支持平台
 
-- Android TV / Google TV（本 Fork 的 `tv` flavor）
-- Android 10 及以上
+- Android TV / Google TV（本 Fork 的 `tv` flavor；已记录 Android 9 实体电视和 API 36 模拟器测试，详见上方验证范围）
+- Android 手机版：上游标注 Android 10 及以上（与 TV 实测系统版本分开说明）
 - Windows 10 及以上
 - MacOS 10.15 及以上
 - Linux (实验性)
@@ -171,20 +221,22 @@ flutter build apk --debug --flavor tv
 
 <table>
   <tr>
-    <td><img alt="Kazumi TV 带节目号的首页" src="static/screenshot/tv_home.png"></td>
-    <td><img alt="Kazumi TV 遥控器与操作设置" src="static/screenshot/tv_remote_help.png"></td>
+    <td><img alt="Preview 2 实体电视 LCN 首页" src="static/screenshot/tv_preview2_home.png"></td>
+    <td><img alt="Preview 2 详情页默认播放焦点" src="static/screenshot/tv_preview2_detail.png"></td>
   </tr>
   <tr>
-    <td><img alt="Kazumi TV 半透明四列选集面板" src="static/screenshot/tv_player_episodes.png"></td>
-    <td><img alt="Kazumi TV 播放器控件焦点描边" src="static/screenshot/tv_player_controls.png"></td>
+    <td><img alt="Preview 2 透明选集与已知双描边问题" src="static/screenshot/tv_preview2_episodes.png"></td>
+    <td><img alt="Preview 2 OK 唤醒播放焦点" src="static/screenshot/tv_preview2_controls.png"></td>
   </tr>
   <tr>
-    <td colspan="2"><img alt="Kazumi TV 左侧栏历史记录" src="static/screenshot/tv_history.png"></td>
+    <td><img alt="Preview 1 遥控器与操作设置" src="static/screenshot/tv_remote_help.png"></td>
+    <td><img alt="Preview 1 左侧栏历史记录" src="static/screenshot/tv_history.png"></td>
   </tr>
 </table>
 
-> Preview 1 截图：深色首页、历史及遥控器页来自 Google TV API 36 AVD；浅色播放器来自
-> MiTV-ASTP0。均为 1920×1080。播放器中标注的是本地示例弹幕，不代表在线服务验证。
+> 前四张是 Preview 2 / 203010 在 MiTV-ASTP0 的实际截图；最后两张保留 Preview 1 的
+> Google TV API 36 AVD 历史记录。均为 1920×1080。本地示例弹幕不代表在线服务验证；
+> 选集图也保留了播放状态与焦点同样描边的已知问题。
 
 ## 功能 / 开发计划
 

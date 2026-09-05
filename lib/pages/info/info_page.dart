@@ -4,6 +4,7 @@ import 'package:kazumi/bean/dialog/adaptive_bottom_sheet.dart';
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/pages/info/rating_review_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:kazumi/bean/widget/collect_button.dart';
 import 'package:kazumi/bean/widget/embedded_native_control_area.dart';
@@ -11,6 +12,7 @@ import 'package:kazumi/services/storage/storage.dart';
 import 'package:kazumi/pages/info/info_controller.dart';
 import 'package:kazumi/bean/card/bangumi_info_card.dart';
 import 'package:kazumi/pages/info/source_sheet.dart';
+import 'package:kazumi/pages/info/tv_detail_actions.dart';
 import 'package:kazumi/plugins/plugins_controller.dart';
 import 'package:kazumi/bean/card/network_img_layer.dart';
 import 'package:kazumi/services/logging/logger.dart';
@@ -21,6 +23,12 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:kazumi/modules/bangumi/bangumi_item.dart';
 import 'package:kazumi/bean/appbar/drag_to_move_bar.dart' as dtb;
 import 'package:kazumi/utils/device.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
+import 'package:kazumi/services/platform/tv_navigation.dart';
+import 'package:kazumi/repositories/history_repository.dart';
+import 'package:kazumi/services/player/history_playback_service.dart';
+import 'package:kazumi/services/plugin/rule_engine_models.dart'
+    show RuleCancelToken;
 
 class InfoPage extends StatefulWidget {
   const InfoPage({
@@ -66,6 +74,92 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
   bool staffIsEmpty = false;
   bool _showBangumiInfoSkeleton = false;
   int _fabTabIndex = 0;
+  bool _startingPlayback = false;
+  RuleCancelToken? _playCancelToken;
+  final _detailScrollController = ScrollController();
+  final _tvPlayFocus = FocusNode(debugLabel: 'TV detail play');
+  final _tvBackFocus = FocusNode(debugLabel: 'TV detail back');
+  final _tvTabsFocus = FocusNode(debugLabel: 'TV detail tabs');
+
+  void _focusTvPlay() {
+    _tvPlayFocus.requestFocus();
+    if (_detailScrollController.hasClients) {
+      _detailScrollController.animateTo(0,
+          duration: const Duration(milliseconds: 180), curve: Curves.easeOut);
+    }
+  }
+
+  void _focusTvTab() {
+    final tabs = _tvTabsFocus.traversalDescendants
+        .where((node) => node.canRequestFocus && node.context != null)
+        .toList()
+      ..sort((a, b) => a.rect.left.compareTo(b.rect.left));
+    if (tabs.isEmpty) return;
+    final node = tabs[infoTabController.index.clamp(0, tabs.length - 1)];
+    node.requestFocus();
+    Scrollable.ensureVisible(node.context!,
+        duration: const Duration(milliseconds: 180),
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
+  }
+
+  KeyEventResult _tvTabKey(FocusNode node, KeyEvent event) {
+    if (TvMode.enabled &&
+        (event is KeyDownEvent || event is KeyRepeatEvent) &&
+        event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      _focusTvPlay();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  KeyEventResult _tvBackKey(FocusNode node, KeyEvent event) {
+    if (TvMode.enabled &&
+        (event is KeyDownEvent || event is KeyRepeatEvent) &&
+        event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      _focusTvPlay();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  Future<void> _startWatching() async {
+    if (_startingPlayback) return;
+    _startingPlayback = true;
+    try {
+      if (TvMode.enabled) {
+        final histories = inject<IHistoryRepository>().getAllHistories().where(
+              (item) => item.bangumiItem.id == infoController.bangumiItem.id,
+            );
+        if (histories.isNotEmpty) {
+          final cancelToken = RuleCancelToken();
+          _playCancelToken = cancelToken;
+          KazumiDialog.showLoading(msg: '继续观看', onDismiss: cancelToken.cancel);
+          final result = await inject<HistoryPlaybackService>().open(
+            histories.first,
+            cancelToken: cancelToken,
+          );
+          if (!mounted) return;
+          final cancelled = cancelToken.isCancelled;
+          if (cancelled) return;
+          KazumiDialog.dismiss();
+          if (result is HistoryPlaybackReady) {
+            context.pushNamed('/video/', arguments: result.args);
+            return;
+          }
+          KazumiDialog.showToast(message: '上次的播放源不可用，请重新选源');
+        }
+      }
+      if (!mounted) return;
+      await showAdaptiveBottomSheet<void>(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        context: context,
+        builder: (_) => SourceSheet(infoController: infoController),
+      );
+    } finally {
+      _playCancelToken = null;
+      _startingPlayback = false;
+    }
+  }
 
   BangumiItem get inputBangumiIten => widget.inputBangumiItem;
 
@@ -293,6 +387,11 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _playCancelToken?.cancel();
+    _detailScrollController.dispose();
+    _tvPlayFocus.dispose();
+    _tvBackFocus.dispose();
+    _tvTabsFocus.dispose();
     infoTabController.removeListener(onInfoTabChanged);
     infoTabController.removeListener(_syncFabTabIndex);
     infoTabController.animation?.removeListener(_syncFabTabIndex);
@@ -342,12 +441,15 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
     final bool showWindowButton =
         GStorage.getSetting(SettingsKeys.showWindowButton);
     final bool showRatingFab = _fabTabIndex == _commentsTabIndex;
-    return PopScope(
+    final headerHeight =
+        TvMode.enabled ? BangumiInfoCardV.tvHeaderHeight(context) + 8 : 308.0;
+    final page = PopScope(
       canPop: true,
       child: DefaultTabController(
         length: _infoTabs.length,
         child: Scaffold(
           body: NestedScrollView(
+            controller: _detailScrollController,
             headerSliverBuilder:
                 (BuildContext context, bool innerBoxIsScrolled) {
               return <Widget>[
@@ -371,15 +473,21 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                     automaticallyImplyLeading: false,
                     scrolledUnderElevation: 0.0,
                     leading: EmbeddedNativeControlArea(
-                      child: IconButton(
-                        onPressed: () {
-                          context.maybePop();
-                        },
-                        icon: Icon(Icons.arrow_back),
+                      child: Focus(
+                        skipTraversal: true,
+                        canRequestFocus: false,
+                        onKeyEvent: _tvBackKey,
+                        child: IconButton(
+                          focusNode: TvMode.enabled ? _tvBackFocus : null,
+                          onPressed: () {
+                            context.maybePop();
+                          },
+                          icon: Icon(Icons.arrow_back),
+                        ),
                       ),
                     ),
                     actions: [
-                      if (innerBoxIsScrolled)
+                      if (innerBoxIsScrolled && !TvMode.enabled)
                         EmbeddedNativeControlArea(
                           child: CollectButton(
                             bangumiItem: infoController.bangumiItem,
@@ -409,8 +517,8 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                     stretch: true,
                     centerTitle: false,
                     expandedHeight: (Platform.isMacOS && showWindowButton)
-                        ? 308 + kTextTabBarHeight + kToolbarHeight + 22
-                        : 308 + kTextTabBarHeight + kToolbarHeight,
+                        ? headerHeight + kTextTabBarHeight + kToolbarHeight + 22
+                        : headerHeight + kTextTabBarHeight + kToolbarHeight,
                     collapsedHeight: (Platform.isMacOS && showWindowButton)
                         ? kTextTabBarHeight +
                             kToolbarHeight +
@@ -450,6 +558,21 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                                       bangumiItem: infoController.bangumiItem,
                                       isLoading: showBangumiInfoSkeleton,
                                       showRating: showRating,
+                                      tvActions: TvMode.enabled
+                                          ? TvDetailActions(
+                                              playFocus: _tvPlayFocus,
+                                              onPlay: _startWatching,
+                                              collectionBuilder: (focusNode) =>
+                                                  CollectButton.extend(
+                                                bangumiItem:
+                                                    infoController.bangumiItem,
+                                                focusNode: focusNode,
+                                              ),
+                                              onReview: onBangumiRatingTap,
+                                              onUp: _tvBackFocus.requestFocus,
+                                              onDown: _focusTvTab,
+                                            )
+                                          : null,
                                     ),
                                   ),
                                 ),
@@ -460,12 +583,22 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
                       }),
                     ),
                     forceElevated: innerBoxIsScrolled,
-                    bottom: TabBar(
-                      controller: infoTabController,
-                      isScrollable: true,
-                      tabAlignment: TabAlignment.center,
-                      dividerHeight: 0,
-                      tabs: _infoTabs.map((name) => Tab(text: name)).toList(),
+                    bottom: PreferredSize(
+                      preferredSize: const Size.fromHeight(kTextTabBarHeight),
+                      child: Focus(
+                        focusNode: _tvTabsFocus,
+                        skipTraversal: true,
+                        canRequestFocus: false,
+                        onKeyEvent: _tvTabKey,
+                        child: TabBar(
+                          controller: infoTabController,
+                          isScrollable: true,
+                          tabAlignment: TabAlignment.center,
+                          dividerHeight: 0,
+                          tabs:
+                              _infoTabs.map((name) => Tab(text: name)).toList(),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -499,31 +632,27 @@ class _InfoPageState extends State<InfoPage> with TickerProviderStateMixin {
               );
             }),
           ),
-          floatingActionButton: showRatingFab
-              ? FloatingActionButton.extended(
-                  tooltip: '吐槽',
-                  onPressed: onBangumiRatingTap,
-                  label: const Text('发表吐槽'),
-                  icon: const Icon(Icons.rate_review_rounded),
-                )
-              : FloatingActionButton.extended(
-                  tooltip: '开始观看',
-                  onPressed: () {
-                    showAdaptiveBottomSheet<void>(
-                      backgroundColor:
-                          Theme.of(context).scaffoldBackgroundColor,
-                      context: context,
-                      builder: (context) {
-                        return SourceSheet(infoController: infoController);
-                      },
-                    );
-                  },
-                  label: const Text('开始观看'),
-                  icon: const Icon(Icons.play_arrow_rounded),
-                ),
+          floatingActionButton: TvMode.enabled
+              ? null
+              : showRatingFab
+                  ? FloatingActionButton.extended(
+                      tooltip: '吐槽',
+                      onPressed: onBangumiRatingTap,
+                      label: const Text('发表吐槽'),
+                      icon: const Icon(Icons.rate_review_rounded),
+                    )
+                  : FloatingActionButton.extended(
+                      tooltip: '开始观看',
+                      onPressed: _startWatching,
+                      label: const Text('开始观看'),
+                      icon: const Icon(Icons.play_arrow_rounded),
+                    ),
         ),
       ),
     );
+    return TvMode.enabled
+        ? TvDetailPlayShortcut(onPlay: _startWatching, child: page)
+        : page;
   }
 }
 

@@ -25,6 +25,8 @@ import 'package:kazumi/pages/download/download_controller.dart';
 import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/utils/format.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
+import 'package:kazumi/services/platform/tv_navigation.dart';
+import 'package:kazumi/bean/widget/tv_focus_navigation.dart';
 
 class PlayerItemPanel extends StatefulWidget {
   const PlayerItemPanel({
@@ -106,6 +108,7 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
   final TextEditingController textController = TextEditingController();
   final FocusNode textFieldFocus = FocusNode();
   final FocusNode _topBackFocus = FocusNode(debugLabel: 'player-top-back');
+  final FocusNode _topHomeFocus = FocusNode(debugLabel: 'player-top-home');
   final FocusNode _topForwardFocus =
       FocusNode(debugLabel: 'player-top-forward');
   final FocusNode _topPipFocus = FocusNode(debugLabel: 'player-top-pip');
@@ -147,6 +150,7 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
     textFieldFocus.dispose();
     for (final node in <FocusNode>[
       _topBackFocus,
+      _topHomeFocus,
       _topForwardFocus,
       _topPipFocus,
       _topCollectFocus,
@@ -581,16 +585,15 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
 
     switch (event.logicalKey) {
       case LogicalKeyboardKey.arrowLeft:
-        if (index > 0) row[index - 1].requestFocus();
+        row[tvWrappedIndex(index, -1, row.length)].requestFocus();
         return KeyEventResult.handled;
       case LogicalKeyboardKey.arrowRight:
-        if (index + 1 < row.length) row[index + 1].requestFocus();
+        row[tvWrappedIndex(index, 1, row.length)].requestFocus();
         return KeyEventResult.handled;
       case LogicalKeyboardKey.arrowUp:
-        if (!topRow) _focusCorrespondingTvControl(row, index, _topFocusNodes);
-        return KeyEventResult.handled;
       case LogicalKeyboardKey.arrowDown:
-        if (topRow) _focusCorrespondingTvControl(row, index, _bottomFocusNodes);
+        _focusCorrespondingTvControl(
+            row, index, topRow ? _bottomFocusNodes : _topFocusNodes);
         return KeyEventResult.handled;
       default:
         return KeyEventResult.ignored;
@@ -599,6 +602,7 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
 
   List<FocusNode> get _topFocusNodes => <FocusNode>[
         _topBackFocus,
+        _topHomeFocus,
         _topForwardFocus,
         _topPipFocus,
         _topCollectFocus,
@@ -607,6 +611,7 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
 
   List<FocusNode> get _bottomFocusNodes => <FocusNode>[
         _bottomPlayFocus,
+        if (TvMode.enabled) _bottomEpisodesFocus,
         _bottomNextFocus,
         _bottomDanmakuFocus,
         _bottomDanmakuSettingsFocus,
@@ -614,7 +619,7 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
         _bottomSuperResolutionFocus,
         _bottomSpeedFocus,
         _bottomAspectRatioFocus,
-        _bottomEpisodesFocus,
+        if (!TvMode.enabled) _bottomEpisodesFocus,
         _bottomFullscreenFocus,
       ];
 
@@ -922,6 +927,9 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: _withTvControlTraversal(
                 Row(
+                  mainAxisAlignment: TvMode.enabled
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
                   children: [
                     IconButton(
                       focusNode: _bottomPlayFocus,
@@ -932,6 +940,15 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
                         playing: playerController.playback.playing,
                       ),
                     ),
+                    if (TvMode.enabled)
+                      TextButton.icon(
+                        focusNode: _bottomEpisodesFocus,
+                        onPressed: widget.toggleMenu,
+                        icon: const Icon(Icons.menu_open_rounded,
+                            color: Colors.white),
+                        label: const Text('选集',
+                            style: TextStyle(color: Colors.white)),
+                      ),
                     if (videoPageController.isFullscreen ||
                         isTablet() ||
                         isDesktop())
@@ -1024,9 +1041,14 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
                           icon: cachedDanmakuSettingIcon!,
                           tooltip: '弹幕设置',
                         ),
-                        Expanded(child: danmakuTextField),
+                        if (TvMode.enabled)
+                          danmakuTextField
+                        else
+                          Expanded(child: danmakuTextField),
                       ],
-                      if (!playerController.danmaku.danmakuOn) const Spacer(),
+                      if (!TvMode.enabled &&
+                          !playerController.danmaku.danmakuOn)
+                        const Spacer(),
                     ],
                     PlayerPanelHoldMenuAnchor(
                       acquirePlayerPanelHold: widget.acquirePlayerPanelHold,
@@ -1172,10 +1194,10 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
                           ),
                       ],
                     ),
-                    (!TvMode.enabled &&
-                            !videoPageController.isFullscreen &&
-                            !isTablet() &&
-                            !isDesktop())
+                    (TvMode.enabled ||
+                            (!videoPageController.isFullscreen &&
+                                !isTablet() &&
+                                !isDesktop()))
                         ? Container()
                         : IconButton(
                             focusNode: _bottomEpisodesFocus,
@@ -1242,6 +1264,14 @@ class PlayerItemPanelState extends State<PlayerItemPanel> {
                     widget.onBackPressed(context);
                   },
                 ),
+                if (TvMode.enabled)
+                  TextButton.icon(
+                    focusNode: _topHomeFocus,
+                    onPressed: TvNavigation.goHome,
+                    icon: const Icon(Icons.home_outlined, color: Colors.white),
+                    label:
+                        const Text('主页', style: TextStyle(color: Colors.white)),
+                  ),
                 Expanded(
                   child: dtb.DragToMoveArea(
                     child: Text(

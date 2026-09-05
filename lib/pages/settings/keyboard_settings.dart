@@ -6,6 +6,7 @@ import 'package:kazumi/bean/settings/settings_detail_scaffold.dart';
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/bean/widget/tv_focusable_surface.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
+import 'package:kazumi/bean/widget/tv_focus_navigation.dart';
 
 /// Display group for the shortcut list. Functions missing from every group
 /// fall back to a trailing "其他" group so new shortcuts never disappear.
@@ -67,7 +68,17 @@ const List<_TvRemoteGroup> _tvRemoteGroups = [
       _TvRemoteMapping(
         Icons.gamepad_rounded,
         '方向键 / OK / 返回',
-        '移动焦点并确认；返回关闭当前页面，主页连按两次退出应用',
+        '按钮行和分类首尾循环；节目首列左键返回侧栏，侧栏左键跳到右侧；返回关闭当前层',
+      ),
+      _TvRemoteMapping(
+        Icons.home_outlined,
+        '长按返回约 1 秒后松开',
+        '直接返回本应用的 LCN 主页；短按保持逐层返回，主页短按两次退出。系统 Home 仍回电视桌面',
+      ),
+      _TvRemoteMapping(
+        Icons.play_arrow_rounded,
+        '详情页：播放 / 播放暂停键',
+        '优先续播上次的源和进度；无可用历史时打开选源，不自动猜测搜索结果',
       ),
     ],
   ),
@@ -452,14 +463,16 @@ class _KeyboardSettingsPageState extends State<KeyboardSettingsPage> {
                     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
                       return KeyEventResult.ignored;
                     }
-                    if (event.logicalKey == LogicalKeyboardKey.arrowLeft &&
-                        index > 0) {
-                      _tvSectionFocusNodes[index - 1].requestFocus();
+                    if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+                      _tvSectionFocusNodes[
+                              tvWrappedIndex(index, -1, labels.length)]
+                          .requestFocus();
                       return KeyEventResult.handled;
                     }
-                    if (event.logicalKey == LogicalKeyboardKey.arrowRight &&
-                        index < labels.length - 1) {
-                      _tvSectionFocusNodes[index + 1].requestFocus();
+                    if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                      _tvSectionFocusNodes[
+                              tvWrappedIndex(index, 1, labels.length)]
+                          .requestFocus();
                       return KeyEventResult.handled;
                     }
                     return KeyEventResult.ignored;

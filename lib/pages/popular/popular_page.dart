@@ -19,6 +19,8 @@ import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/services/platform/tv_channel_input.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
+import 'package:kazumi/services/platform/tv_navigation.dart';
+import 'package:kazumi/bean/widget/tv_focus_navigation.dart';
 
 class PopularPage extends StatefulWidget {
   const PopularPage({
@@ -61,6 +63,7 @@ class _PopularPageState extends State<PopularPage> {
     );
     scrollController.addListener(scrollListener);
     tvChannelInputController.addListener(_handleChannelDigit);
+    TvNavigation.homeRequests.addListener(_focusHome);
     if (popularController.trendList.isEmpty) {
       popularController.queryBangumiByTrend();
     }
@@ -70,6 +73,7 @@ class _PopularPageState extends State<PopularPage> {
   void dispose() {
     scrollController.removeListener(scrollListener);
     tvChannelInputController.removeListener(_handleChannelDigit);
+    TvNavigation.homeRequests.removeListener(_focusHome);
     _tagSelectionTimer?.cancel();
     _channelCommitTimer?.cancel();
     for (final node in _channelFocusNodes.values) {
@@ -95,6 +99,47 @@ class _PopularPageState extends State<PopularPage> {
         popularController.queryBangumiByTrend();
       }
     }
+  }
+
+  void _focusHome() {
+    if (!mounted || !TvMode.enabled) return;
+    _tagSelectionTimer?.cancel();
+    if (scrollController.hasClients) scrollController.jumpTo(0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final first = _channelFocusNodes[1];
+      if (first?.context != null) first!.requestFocus();
+    });
+  }
+
+  KeyEventResult _handleGridKey(
+      int index, int count, int columns, KeyEvent event) {
+    if (!TvMode.enabled ||
+        (event is! KeyDownEvent && event is! KeyRepeatEvent)) {
+      return KeyEventResult.ignored;
+    }
+    final direction = switch (event.logicalKey) {
+      LogicalKeyboardKey.arrowLeft => TraversalDirection.left,
+      LogicalKeyboardKey.arrowRight => TraversalDirection.right,
+      LogicalKeyboardKey.arrowDown => TraversalDirection.down,
+      _ => null,
+    };
+    // Left of the first column remains a doorway to the navigation rail.
+    // UP keeps the category tabs reachable. The page/rail edges form the loop.
+    if (direction == null ||
+        (direction == TraversalDirection.left && index % columns == 0)) {
+      return KeyEventResult.ignored;
+    }
+    final target = tvGridTarget(index, count, columns, direction) + 1;
+    final node = _focusNodeForChannel(target);
+    if (node.context != null) {
+      node.requestFocus();
+    } else {
+      unawaited(_scrollToChannel(target).then((_) {
+        if (mounted && node.context != null) node.requestFocus();
+      }));
+    }
+    return KeyEventResult.handled;
   }
 
   List<BangumiItem> get _visibleBangumiList =>
@@ -443,6 +488,8 @@ class _PopularPageState extends State<PopularPage> {
                     focusNode: TvMode.enabled
                         ? _focusNodeForChannel(channelNumber)
                         : null,
+                    onKeyEvent: (_, event) => _handleGridKey(
+                        index, bangumiList.length, crossCount, event),
                     onPressed: TvMode.enabled
                         ? () => _openChannel(bangumiList[index])
                         : null,
@@ -613,13 +660,14 @@ class _PopularPageState extends State<PopularPage> {
             return KeyEventResult.ignored;
           }
           final tags = ['', ...defaultAnimeTags];
-          if (event.logicalKey == LogicalKeyboardKey.arrowLeft && index > 0) {
-            _focusNodeForTag(tags[index - 1]).requestFocus();
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            _focusNodeForTag(tags[tvWrappedIndex(index, -1, tags.length)])
+                .requestFocus();
             return KeyEventResult.handled;
           }
-          if (event.logicalKey == LogicalKeyboardKey.arrowRight &&
-              index < tags.length - 1) {
-            _focusNodeForTag(tags[index + 1]).requestFocus();
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+            _focusNodeForTag(tags[tvWrappedIndex(index, 1, tags.length)])
+                .requestFocus();
             return KeyEventResult.handled;
           }
           return KeyEventResult.ignored;

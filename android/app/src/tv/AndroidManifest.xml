@@ -13,7 +13,11 @@
 
     <application android:banner="@drawable/tv_banner"
         android:icon="@mipmap/ic_launcher" tools:replace="android:icon">
-        <activity android:name=".MainActivity">
+        <!-- A TV remote needs DOWN/UP timing for short/long BACK. Android 16
+             predictive back consumes KEYCODE_BACK before Activity dispatch.
+             Only the TV flavor opts out; mobile gesture navigation is unchanged. -->
+        <activity android:name=".MainActivity"
+            android:enableOnBackInvokedCallback="false">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />

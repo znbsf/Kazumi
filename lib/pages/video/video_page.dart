@@ -31,6 +31,8 @@ import 'package:kazumi/services/platform/display_mode_service.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
 import 'package:mobx/mobx.dart' as mobx;
 import 'package:kazumi/bean/widget/tv_focusable_surface.dart';
+import 'package:kazumi/bean/widget/tv_focus_navigation.dart';
+import 'package:kazumi/bean/widget/tv_player_side_panel.dart';
 
 class VideoPage extends StatefulWidget {
   const VideoPage({
@@ -393,6 +395,26 @@ class _VideoPageState extends State<VideoPage>
     );
   }
 
+  void _focusTvEpisode(int episode) {
+    final road = visibleRoad;
+    final node = _episodeFocusNode(road, episode);
+    if (node.context != null) {
+      node.requestFocus();
+      return;
+    }
+    if (!scrollController.hasClients) return;
+    scrollController.jumpTo((((episode - 1) ~/ 4) * 55.0)
+        .clamp(0.0, scrollController.position.maxScrollExtent));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted &&
+          videoPageController.showTabBody &&
+          visibleRoad == road &&
+          node.context != null) {
+        node.requestFocus();
+      }
+    });
+  }
+
   void _focusCurrentEpisode([int attempt = 0]) {
     if (!TvMode.enabled) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -418,6 +440,9 @@ class _VideoPageState extends State<VideoPage>
   }
 
   void _setTabBodyVisible(bool visible, {required bool animated}) {
+    if (TvMode.enabled && visible) {
+      playerController.panel.showVideoController = false;
+    }
     _tabBodyTargetVisible = visible;
     final int animationRun = ++_tabBodyAnimationRun;
 
@@ -688,6 +713,8 @@ class _VideoPageState extends State<VideoPage>
                           width: MediaQuery.sizeOf(context).width,
                           child: Focus(
                             focusNode: keyboardFocus,
+                            descendantsAreFocusable: !TvMode.enabled ||
+                                !videoPageController.showTabBody,
                             // This node is the player's global shortcut
                             // receiver. TV controls may request it explicitly
                             // while the overlay is hidden, but it must not
@@ -739,22 +766,24 @@ class _VideoPageState extends State<VideoPage>
     return SizedBox(
       height: size.height,
       width: sideWidth,
-      child: Container(
-        color: Theme.of(context)
-            .canvasColor
-            .withValues(alpha: TvMode.enabled ? 0.88 : 1),
-        child: (isDesktop() || isTablet())
-            ? tabBody
-            : GridViewObserver(
-                controller: observerController,
-                child: Column(
-                  children: [
-                    menuBar,
-                    menuBody,
-                  ],
-                ),
-              ),
-      ),
+      child: TvMode.enabled
+          ? TvPlayerSidePanel(child: tabBody)
+          : Container(
+              color: Theme.of(context)
+                  .canvasColor
+                  .withValues(alpha: TvMode.enabled ? 0.88 : 1),
+              child: (isDesktop() || isTablet())
+                  ? tabBody
+                  : GridViewObserver(
+                      controller: observerController,
+                      child: Column(
+                        children: [
+                          menuBar,
+                          menuBody,
+                        ],
+                      ),
+                    ),
+            ),
     );
   }
 
@@ -1097,7 +1126,7 @@ class _VideoPageState extends State<VideoPage>
 
             final card = Material(
               color: Theme.of(context).colorScheme.onInverseSurface.withValues(
-                    alpha: TvMode.enabled ? 0.74 : 1,
+                    alpha: TvMode.enabled ? 0.30 : 1,
                   ),
               borderRadius: BorderRadius.circular(6),
               clipBehavior: Clip.hardEdge,
@@ -1154,10 +1183,23 @@ class _VideoPageState extends State<VideoPage>
                 borderRadius: 6,
                 onPressed: selectEpisode,
                 onKeyEvent: (_, event) {
-                  if (event is KeyDownEvent &&
-                      event.logicalKey == LogicalKeyboardKey.arrowLeft &&
-                      (count0 - 1) % (TvMode.enabled ? 4 : 3) == 0) {
-                    _closeTabBodyAnimated();
+                  if (!TvMode.enabled ||
+                      (event is! KeyDownEvent && event is! KeyRepeatEvent)) {
+                    return KeyEventResult.ignored;
+                  }
+                  final direction = switch (event.logicalKey) {
+                    LogicalKeyboardKey.arrowLeft => TraversalDirection.left,
+                    LogicalKeyboardKey.arrowRight => TraversalDirection.right,
+                    LogicalKeyboardKey.arrowUp => TraversalDirection.up,
+                    LogicalKeyboardKey.arrowDown => TraversalDirection.down,
+                    _ => null,
+                  };
+                  // Keep UP from the first row connected to source / tabs.
+                  if (direction != null &&
+                      !(direction == TraversalDirection.up && count0 <= 4)) {
+                    final target = tvGridTarget(
+                        count0 - 1, road.data.length, 4, direction);
+                    _focusTvEpisode(target + 1);
                     return KeyEventResult.handled;
                   }
                   return KeyEventResult.ignored;
@@ -1196,7 +1238,8 @@ class _VideoPageState extends State<VideoPage>
     final int episodeNum = videoPageController.commentsEpisode;
 
     return Container(
-      color: Theme.of(context).canvasColor,
+      color:
+          TvMode.enabled ? Colors.transparent : Theme.of(context).canvasColor,
       child: DefaultTabController(
         length: 2,
         child: Column(
