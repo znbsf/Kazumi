@@ -8,6 +8,7 @@ import 'package:kazumi/pages/player/controller/player_aspect_ratio.dart';
 import 'package:kazumi/services/network/metered_network_service.dart';
 import 'package:kazumi/utils/constants.dart';
 import 'package:kazumi/services/storage/storage.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 import 'package:kazumi/services/player/pip_utils.dart';
 import 'package:kazumi/bean/settings/settings_list.dart';
 import 'package:kazumi/utils/device.dart';
@@ -318,7 +319,9 @@ class _PlayerSettingsPageState extends State<PlayerSettingsPage> {
                   title: Text('低内存模式'),
                   description: Text(MeteredNetworkService.isMetered
                       ? '移动网络下已自动启用'
-                      : '禁用高级缓存以减少内存占用'),
+                      : TvMode.enabled
+                          ? '开启：前向 64 MiB / 回看 16 MiB；关闭：256 / 64 MiB。仅限制压缩数据缓存，并非总内存'
+                          : '禁用高级缓存以减少内存占用'),
                   // Effective state, not the stored one, which stays untouched.
                   initialValue:
                       lowMemoryMode || MeteredNetworkService.isMetered,

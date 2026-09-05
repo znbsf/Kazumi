@@ -270,6 +270,12 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
                     icon: Icon(Icons.home_outlined),
                     label: Text('推荐'),
                   ),
+                  if (TvMode.enabled)
+                    const NavigationRailDestination(
+                      selectedIcon: Icon(Icons.history_rounded),
+                      icon: Icon(Icons.history),
+                      label: Text('历史'),
+                    ),
                   const NavigationRailDestination(
                     selectedIcon: Icon(Icons.timeline),
                     icon: Icon(Icons.timeline_outlined),

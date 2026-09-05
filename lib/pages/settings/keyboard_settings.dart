@@ -76,6 +76,11 @@ const List<_TvRemoteGroup> _tvRemoteGroups = [
     Icons.play_circle_rounded,
     [
       _TvRemoteMapping(
+        Icons.radio_button_checked,
+        'OK / 上 / 下（控制栏隐藏时）',
+        'OK 或下键唤醒并聚焦播放/暂停；上键聚焦选集。唤醒不暂停，再按 OK 才执行当前按钮',
+      ),
+      _TvRemoteMapping(
         Icons.play_circle_outline_rounded,
         '播放与定位',
         '播放/暂停键；左右键或媒体键快退、快进；频道键切换上下集',

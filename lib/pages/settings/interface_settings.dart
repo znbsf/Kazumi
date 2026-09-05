@@ -2,6 +2,7 @@ import 'package:kazumi/bean/settings/settings_list.dart';
 import 'package:flutter/material.dart';
 import 'package:kazumi/bean/settings/settings_detail_scaffold.dart';
 import 'package:kazumi/services/storage/storage.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 class InterfaceSettingsPage extends StatefulWidget {
   const InterfaceSettingsPage({super.key});
@@ -16,12 +17,13 @@ class _InterfaceSettingsPageState extends State<InterfaceSettingsPage> {
   late String defaultPage;
   final MenuController defaultPageMenuController = MenuController();
 
-  static const Map<String, String> defaultPageMap = {
-    '/tab/popular/': '推荐',
-    '/tab/timeline/': '时间表',
-    '/tab/collect/': '追番',
-    '/tab/my/': '我的',
-  };
+  Map<String, String> get defaultPageMap => {
+        '/tab/popular/': '推荐',
+        if (TvMode.enabled) '/tab/history/': '历史记录',
+        '/tab/timeline/': '时间表',
+        '/tab/collect/': '追番',
+        '/tab/my/': '我的',
+      };
 
   @override
   void initState() {

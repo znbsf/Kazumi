@@ -86,10 +86,16 @@ class PlayerItemPanel extends StatefulWidget {
   final bool disableAnimations;
 
   @override
-  State<PlayerItemPanel> createState() => _PlayerItemPanelState();
+  State<PlayerItemPanel> createState() => PlayerItemPanelState();
 }
 
-class _PlayerItemPanelState extends State<PlayerItemPanel> {
+class PlayerItemPanelState extends State<PlayerItemPanel> {
+  /// Wake always has an explicit destination, independent of screen geometry.
+  void focusTvEntry({required bool episodes}) {
+    final target = episodes ? _bottomEpisodesFocus : _bottomPlayFocus;
+    if (target.context != null && target.canRequestFocus) target.requestFocus();
+  }
+
   late Animation<Offset> topOffsetAnimation;
   late Animation<Offset> bottomOffsetAnimation;
   late Animation<Offset> leftOffsetAnimation;

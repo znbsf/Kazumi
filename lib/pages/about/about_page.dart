@@ -12,6 +12,7 @@ import 'package:kazumi/services/storage/storage.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:kazumi/utils/device.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 class AboutPage extends StatefulWidget {
   const AboutPage({
@@ -171,7 +172,9 @@ class _AboutPageState extends State<AboutPage> {
                 SettingsTile(
                   leading: Icons.code_rounded,
                   onPressed: (_) {
-                    launchUrl(Uri.parse(ApiEndpoints.sourceUrl),
+                    launchUrl(Uri.parse(TvMode.enabled
+                        ? 'https://github.com/znbsf/Kazumi'
+                        : ApiEndpoints.sourceUrl),
                         mode: LaunchMode.externalApplication);
                   },
                   title: Text('代码仓库'),
@@ -180,11 +183,13 @@ class _AboutPageState extends State<AboutPage> {
                 SettingsTile(
                   leading: Icons.brush_rounded,
                   onPressed: (_) {
-                    launchUrl(Uri.parse(ApiEndpoints.iconUrl),
+                    launchUrl(Uri.parse(TvMode.enabled
+                        ? 'https://github.com/znbsf/Kazumi/blob/codex/android-tv-phase1/static/tv-mark.svg'
+                        : ApiEndpoints.iconUrl),
                         mode: LaunchMode.externalApplication);
                   },
                   title: Text('图标创作'),
-                  value: Text('Pixiv'),
+                  value: Text(TvMode.enabled ? 'TV 原创几何标识' : 'Pixiv'),
                 ),
                 SettingsTile(
                   leading: Icons.menu_book_rounded,

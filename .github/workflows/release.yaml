@@ -5,6 +5,7 @@
       push:
         tags:
           - "*"
+          - "!v*-tv-preview.*"
       workflow_dispatch:
         inputs:
           logLevel:

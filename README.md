@@ -2,7 +2,7 @@
 
 <h1>Kazumi TV Fork</h1>
 
-<img src="assets/images/logo/logo_rounded.png" width=200></img>
+<img src="static/tv-mark.svg" width=200></img>
 
 <a href="https://t.me/kazumi_app"><img src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white"></img></a>
 
@@ -20,6 +20,13 @@
 > 这是基于 [Predidit/Kazumi](https://github.com/Predidit/Kazumi) 开发的非官方、开源
 > Android TV 分支。当前默认分支包含 TV 第一阶段能力，同时保留独立的手机版构建；
 > 手机向电视接力播放属于第二阶段，尚未在这里标记为完成。
+
+## 下载 TV 公开测试版
+
+[TV Preview 1：APK 与更新说明](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.1)
+（非稳定版，独立 TV APK）。本包带有明确标注的**本地示例弹幕**：未配置在线 API
+凭证，不等于在线弹幕服务故障，也不是当前剧集的真实评论。详见
+[测试说明](docs/TV_PREVIEW_1.md)和[TV 默认设置审查](docs/TV_DEFAULTS.md)。
 
 ## 这个 Fork 做了什么
 
@@ -52,7 +59,8 @@
 | --- | --- |
 | 0–9 数字键（TV 首页） | 输入 1–3 位节目号；立即高亮匹配卡片，每次输入后等待 1.8 秒进入，也可按 OK 立即进入 |
 | Back（数字查找中） | 取消当前查找；切换其他主页栏目也会自动取消 |
-| D-pad / OK | 控制层隐藏时显示控制层；显示后进行焦点导航和确认 |
+| OK / 下键 | 控制栏隐藏时唤醒并聚焦播放/暂停；再按 OK 执行当前按钮 |
+| 上键 | 控制栏隐藏时唤醒并聚焦选集；显示时上下左右移动焦点 |
 | Play / Pause | 播放、暂停或切换状态 |
 | Fast Forward / Rewind | 快进、快退 |
 | Channel Up / Down | 下一集、上一集 |
@@ -91,7 +99,7 @@
 `mediacodec_embed` 不支持 Anime4K 超分辨率，并会限制部分 mpv 视频滤镜/OSD 合成；
 因此启用直连输出时会禁用不兼容的超分辨率。用户显式选择 `gpu` / `gpu-next` 时仍尊重
 该设置，手机版的自动渲染器选择也不改变。模拟器只能验证配置、播放和 UI 路径，不能
-替代实体电视芯片上的 4K/HDR、功耗和长时间稳定性结论；本轮验收按用户要求只使用 AVD。
+替代实体电视芯片上的 4K/HDR、功耗和长时间稳定性结论。
 
 ## 弹幕凭证与同步
 
@@ -170,9 +178,13 @@ flutter build apk --debug --flavor tv
     <td><img alt="Kazumi TV 半透明四列选集面板" src="static/screenshot/tv_player_episodes.png"></td>
     <td><img alt="Kazumi TV 播放器控件焦点描边" src="static/screenshot/tv_player_controls.png"></td>
   </tr>
+  <tr>
+    <td colspan="2"><img alt="Kazumi TV 左侧栏历史记录" src="static/screenshot/tv_history.png"></td>
+  </tr>
 </table>
 
-> 截图来自 1920×1080 Google TV API 36 AVD 的当前 TV 构建；不代表实体电视的解码性能。
+> Preview 1 截图：深色首页、历史及遥控器页来自 Google TV API 36 AVD；浅色播放器来自
+> MiTV-ASTP0。均为 1920×1080。播放器中标注的是本地示例弹幕，不代表在线服务验证。
 
 ## 功能 / 开发计划
 
@@ -307,7 +319,10 @@ A: 本项目编译需要良好的网络环境, 除了由 Google 托管的 Flutte
 
 ## 美术资源
 
-本项目图标来自 [Yuquanaaa](https://www.pixiv.net/users/66219277) 发表在 [Pixiv](https://www.pixiv.net/artworks/116666979) 上的作品。
+本 fork 的 TV 发行 APK 使用独立原创几何电视标识（GPL-3.0），不打包上游人物图标。
+以下为保留的上游图标署名及限制，不意味着其授权自动延伸到 fork：
+
+上游项目图标来自 [Yuquanaaa](https://www.pixiv.net/users/66219277) 发表在 [Pixiv](https://www.pixiv.net/artworks/116666979) 上的作品。
 
 此图标由其原作者 [Yuquanaaa](https://www.pixiv.net/users/66219277) 拥有版权。我们已获得原作者的授权和许可, 可以在本项目中使用这一图标。这一图标不是自由使用的, 未经原作者明确授权, 任何人不得擅自使用、复制、修改或分发这一图标。
 

@@ -14,6 +14,7 @@ import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/utils/date_time.dart';
 import 'package:kazumi/utils/crypto.dart';
 import 'package:kazumi/utils/version.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 /// 安装类型枚举
 enum InstallationType {
@@ -155,6 +156,8 @@ class AutoUpdater {
 
   /// 检查是否有新版本可用
   Future<UpdateInfo?> checkForUpdates() async {
+    // TV previews must never offer upstream mobile APKs from the mirror.
+    if (TvMode.enabled) return null;
     try {
       final data = await _latestRelease();
 
@@ -200,6 +203,7 @@ class AutoUpdater {
 
   /// 自动检查更新（仅在启用自动更新时）
   Future<void> autoCheckForUpdates() async {
+    if (TvMode.enabled) return;
     final autoUpdate = GStorage.getSetting(SettingsKeys.autoUpdate);
     if (!autoUpdate) return;
 
@@ -216,6 +220,10 @@ class AutoUpdater {
 
   /// 手动检查更新
   Future<void> manualCheckForUpdates() async {
+    if (TvMode.enabled) {
+      await launchUrl(Uri.parse('https://github.com/znbsf/Kazumi/releases'));
+      return;
+    }
     try {
       final updateInfo = await checkForUpdates();
       if (updateInfo != null) {

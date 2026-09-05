@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/services/network/metered_network_service.dart';
 import 'package:kazumi/services/storage/storage.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 import 'package:kazumi/utils/async_serial_queue.dart';
 import 'package:media_kit/media_kit.dart';
 
@@ -32,8 +33,29 @@ class PlaybackCachePolicy {
   bool get networkForced =>
       !_userEnabled && !isLocalPlayback() && MeteredNetworkService.isMetered;
 
-  int get bufferSize =>
-      _userEnabled || networkForced ? _lowMemoryBufferSize : _defaultBufferSize;
+  /// Limits compressed packet caching, not total process or decoder memory.
+  static int cacheBytes({
+    required bool television,
+    required bool lowMemory,
+    required bool metered,
+    bool backward = false,
+  }) {
+    if (metered) return _lowMemoryBufferSize;
+    if (television) {
+      final mib = backward ? (lowMemory ? 16 : 64) : (lowMemory ? 64 : 256);
+      return mib * 1024 * 1024;
+    }
+    return lowMemory ? _lowMemoryBufferSize : _defaultBufferSize;
+  }
+
+  int _cacheSize({bool backward = false}) => cacheBytes(
+        television: TvMode.enabled,
+        lowMemory: _userEnabled,
+        metered: !isLocalPlayback() && MeteredNetworkService.isMetered,
+        backward: backward,
+      );
+
+  int get bufferSize => _cacheSize();
 
   void startWatching() {
     if (_watching) {
@@ -68,7 +90,8 @@ class PlaybackCachePolicy {
         }
         final size = bufferSize.toString();
         await pp.setProperty('demuxer-max-bytes', size);
-        await pp.setProperty('demuxer-max-back-bytes', size);
+        await pp.setProperty(
+            'demuxer-max-back-bytes', _cacheSize(backward: true).toString());
       });
     } catch (e) {
       KazumiLogger().w(

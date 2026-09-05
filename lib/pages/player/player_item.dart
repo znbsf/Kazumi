@@ -411,12 +411,13 @@ class _PlayerItemState extends State<PlayerItem>
     _pendingTvControlDirection = TraversalDirection.down;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final focusScope = FocusScope.of(context);
-      if (!focusScope.focusInDirection(direction)) {
-        focusScope.nextFocus();
-      }
+      _tvPanelKey.currentState?.focusTvEntry(
+        episodes: direction == TraversalDirection.up,
+      );
     });
   }
+
+  final _tvPanelKey = GlobalKey<PlayerItemPanelState>();
 
   bool _handleVisibleTvNavigationKey(LogicalKeyboardKey key) {
     if (!TvMode.enabled ||
@@ -430,6 +431,15 @@ class _PlayerItemState extends State<PlayerItem>
         key == LogicalKeyboardKey.arrowLeft ||
         key == LogicalKeyboardKey.arrowRight;
     if (!isArrowKey) return false;
+    // A dismissed sheet may restore the shortcut root while controls remain
+    // visible. Re-enter the real buttons instead of leaving OK stranded there.
+    if (widget.keyboardFocus.hasPrimaryFocus) {
+      _pendingTvControlDirection = key == LogicalKeyboardKey.arrowUp
+          ? TraversalDirection.up
+          : TraversalDirection.down;
+      _showTvControls();
+      return true;
+    }
     displayVideoController();
     // Keep the overlay alive, then let Flutter's built-in directional focus
     // policy move between the visible controls. The shortcut gate below keeps
@@ -444,10 +454,12 @@ class _PlayerItemState extends State<PlayerItem>
     if (!TvMode.enabled) return true;
     if (shouldDeferTvKeyToPlatform(key)) return false;
     if (actionName == 'showcontrols' &&
-        !playerController.panel.showVideoController) {
+        (!playerController.panel.showVideoController ||
+            widget.keyboardFocus.hasPrimaryFocus)) {
       _pendingTvControlDirection = key == LogicalKeyboardKey.arrowUp
           ? TraversalDirection.up
           : TraversalDirection.down;
+      return true;
     }
     final isNavigationKey = key == LogicalKeyboardKey.select ||
         key == LogicalKeyboardKey.enter ||
@@ -1772,6 +1784,7 @@ class _PlayerItemState extends State<PlayerItem>
                         ? const SizedBox.shrink()
                         : (needFullPanel(context))
                             ? PlayerItemPanel(
+                                key: _tvPanelKey,
                                 playerController: playerController,
                                 videoPageController: videoPageController,
                                 onBackPressed: widget.onBackPressed,

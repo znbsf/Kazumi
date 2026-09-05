@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:kazumi/bean/widget/image_preview.dart';
 import 'package:kazumi/pages/collect/collect_module.dart';
+import 'package:kazumi/pages/history/history_module.dart';
 import 'package:kazumi/pages/index_page.dart';
 import 'package:kazumi/pages/info/info_module.dart';
 import 'package:kazumi/pages/init_page.dart';
@@ -58,6 +59,7 @@ final tabModule = createModule(
               child: (context, state) => const SizedBox.shrink(),
             )
             ..module(popularModule)
+            ..module(historyModule)
             ..module(timelineModule)
             ..module(collectModule)
             ..module(myModule)

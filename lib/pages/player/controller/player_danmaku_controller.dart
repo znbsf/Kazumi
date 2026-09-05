@@ -10,6 +10,8 @@ import 'package:kazumi/services/storage/storage.dart';
 import 'package:mobx/mobx.dart';
 import 'package:kazumi/utils/danmaku.dart';
 import 'package:kazumi/utils/dandan_credentials.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
+import 'package:kazumi/services/player/tv_preview_danmaku.dart';
 
 part 'player_danmaku_controller.g.dart';
 
@@ -212,6 +214,24 @@ abstract class _PlayerDanmakuController with Store {
     String pluginName,
     int episode,
   ) async {
+    if (tvPreviewDanmakuBuild &&
+        shouldUseTvPreviewDanmaku(
+          previewBuild: tvPreviewDanmakuBuild,
+          television: TvMode.enabled,
+          enabled: GStorage.getSetting(SettingsKeys.tvPreviewDanmaku),
+          hasCredentials: hasDandanCredentials,
+          localPlayback: isLocalPlayback(),
+        )) {
+      try {
+        final comments = loadTvPreviewDanmaku();
+        KazumiLogger().i(
+            'TV preview: loaded ${comments.length} synthetic local comments; online API is not being tested');
+        return DanmakuLoadResult.success(danmakus: comments, bangumiID: 0);
+      } catch (e) {
+        KazumiLogger().w('TV preview: invalid local fixture', error: e);
+        return DanmakuLoadResult.failed(bangumiID: 0);
+      }
+    }
     if (isLocalPlayback()) {
       return await _fetchCachedDanmaku(
         bangumiId,

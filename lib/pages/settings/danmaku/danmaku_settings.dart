@@ -5,6 +5,8 @@ import 'package:kazumi/bean/dialog/dialog_helper.dart';
 import 'package:kazumi/bean/settings/settings_detail_scaffold.dart';
 import 'package:kazumi/bean/settings/settings_list.dart';
 import 'package:kazumi/utils/device.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
+import 'package:kazumi/services/player/tv_preview_danmaku.dart';
 
 class DanmakuSettingsPage extends StatefulWidget {
   const DanmakuSettingsPage({super.key});
@@ -166,6 +168,25 @@ class _DanmakuSettingsPageState extends State<DanmakuSettingsPage> {
         title: const Text('弹幕设置'),
         body: SettingsList(
           sections: [
+            if (tvPreviewDanmakuBuild && TvMode.enabled)
+              SettingsSection(title: const Text('TV 预览版'), tiles: [
+                SettingsTile.switchTile(
+                  leading: Icons.science_outlined,
+                  title: const Text('本地示例弹幕'),
+                  description:
+                      const Text('未配置在线 API 凭证时使用“本地示例”合成数据，不代表服务故障；更改后重新进入播放生效'),
+                  initialValue:
+                      GStorage.getSetting(SettingsKeys.tvPreviewDanmaku),
+                  onToggle: (value) async {
+                    await GStorage.putSetting(
+                        SettingsKeys.tvPreviewDanmaku,
+                        value ??
+                            !GStorage.getSetting(
+                                SettingsKeys.tvPreviewDanmaku));
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ]),
             SettingsSection(
               title: Text('弹幕来源'),
               tiles: [

@@ -1,7 +1,19 @@
 # Kazumi TV 开源路线图
 
 本文件是 Kazumi TV 分支的唯一阶段计划与验收台账。项目继续遵守上游
-GPL-3.0；发布前还需要确认上游图标的单独授权，或替换为本项目自有图标。
+GPL-3.0；TV 公开测试 APK 使用自有几何电视标识，不打包需单独授权的上游人物图标。
+
+## 公开测试版 Preview 1
+
+- [x] OK 唤醒固定焦点、选集入口、输入框显式唤起键盘。
+- [x] 左栏集成历史记录，并保留手机版导航结构。
+- [x] 审查电视默认配置、压缩数据缓存预算和设置保留机制，见 [审查表](TV_DEFAULTS.md)。
+- [x] 本地合成弹幕仅由预览构建脚本显式注入，逐条标注来源和未配置凭证的原因。
+- [x] Release 模式同一 APK 在 TV AVD 与 MiTV-ASTP0 复测，并核对安装后的 SHA-256。
+
+下载入口：[TV Preview 1](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.1)。
+
+公开测试边界及复现方式见 [Preview 1 说明](TV_PREVIEW_1.md)。
 
 ## 产品目标
 

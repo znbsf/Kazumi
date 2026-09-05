@@ -19,3 +19,10 @@
 - 本轮不构成所有电视、输入法及遥控器型号的覆盖。
 
 上游开发说明：https://github.com/Predidit/Kazumi/issues/2500#issuecomment-5549231165
+
+## 公开预览版 203004
+
+后续按用户要求将合成弹幕放入公开预览 APK，但仍不放入普通构建。
+OK 的几何推测焦点改为显式播放/选集落点，子面板退出后根焦点可再次进入控件。
+同一签名/哈希 Release APK 在 Google TV AVD 与实体 MiTV 完成复测，见
+[Preview 1 验证记录](TV_PREVIEW_1.md)。此前 203003 的临时注入说明仅适用于旧包。

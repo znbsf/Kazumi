@@ -662,13 +662,15 @@ class _PopularPageState extends State<PopularPage> {
           icon: const Icon(Icons.search),
         ),
     ];
-    actions.add(
-      IconButton(
-        tooltip: '历史记录',
-        onPressed: () => context.pushNamed('/settings/history/'),
-        icon: const Icon(Icons.history),
-      ),
-    );
+    if (!TvMode.enabled) {
+      actions.add(
+        IconButton(
+          tooltip: '历史记录',
+          onPressed: () => context.pushNamed('/settings/history/'),
+          icon: const Icon(Icons.history),
+        ),
+      );
+    }
     if (isDesktop()) {
       if (!showWindowButton()) {
         actions.add(
