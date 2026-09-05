@@ -19,6 +19,7 @@ class ScaffoldMenu extends StatefulWidget {
 class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
   final _outletKey = GlobalKey<RouterOutletState>();
   final _searchFocusNode = FocusNode(debugLabel: 'TV search entry');
+  final _railFocusScope = FocusScopeNode(debugLabel: 'TV navigation rail');
   DateTime? _lastExitPromptAt;
   bool _didScheduleInitialTvFocus = false;
 
@@ -43,6 +44,7 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
   void dispose() {
     rootRouteObserver.unsubscribe(this);
     _searchFocusNode.dispose();
+    _railFocusScope.dispose();
     super.dispose();
   }
 
@@ -164,6 +166,27 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
       onNotification: (notification) => !notification.canHandlePop,
       child: RouterOutlet(key: _outletKey),
     );
+    if (TvMode.enabled) {
+      child = Focus(
+        canRequestFocus: false,
+        onKeyEvent: (_, event) {
+          if ((event is KeyDownEvent || event is KeyRepeatEvent) &&
+              event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+            final current = FocusManager.instance.primaryFocus;
+            if (current?.context?.widget is EditableText) {
+              return KeyEventResult.ignored;
+            }
+            if (current != null &&
+                !current.focusInDirection(TraversalDirection.left)) {
+              _railFocusScope.requestFocus();
+            }
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: child,
+      );
+    }
     if (borderRadius != null) {
       child = ClipRRect(borderRadius: borderRadius, child: child);
     }
@@ -218,48 +241,60 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
       body: Row(
         children: [
           EmbeddedNativeControlArea(
-            child: NavigationRail(
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-              groupAlignment: 1,
-              leading: FloatingActionButton(
-                elevation: 0,
-                heroTag: null,
-                autofocus: TvMode.enabled,
-                focusNode: _searchFocusNode,
-                onPressed: () => context.pushNamed('/search/'),
-                child: const Icon(Icons.search),
-              ),
-              labelType: NavigationRailLabelType.selected,
-              destinations: <NavigationRailDestination>[
-                const NavigationRailDestination(
-                  selectedIcon: Icon(Icons.home),
-                  icon: Icon(Icons.home_outlined),
-                  label: Text('推荐'),
+            child: FocusScope(
+              node: _railFocusScope,
+              onKeyEvent: (_, event) {
+                if (TvMode.enabled &&
+                    (event is KeyDownEvent || event is KeyRepeatEvent) &&
+                    event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                  _railFocusScope.directionalTraversalEdgeBehavior =
+                      TraversalEdgeBehavior.parentScope;
+                }
+                return KeyEventResult.ignored;
+              },
+              child: NavigationRail(
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+                groupAlignment: 1,
+                leading: FloatingActionButton(
+                  elevation: 0,
+                  heroTag: null,
+                  autofocus: TvMode.enabled,
+                  focusNode: _searchFocusNode,
+                  onPressed: () => context.pushNamed('/search/'),
+                  child: const Icon(Icons.search),
                 ),
-                const NavigationRailDestination(
-                  selectedIcon: Icon(Icons.timeline),
-                  icon: Icon(Icons.timeline_outlined),
-                  label: Text('时间表'),
-                ),
-                const NavigationRailDestination(
-                  selectedIcon: Icon(Icons.favorite),
-                  icon: Icon(Icons.favorite_border),
-                  label: Text('追番'),
-                ),
-                const NavigationRailDestination(
-                  selectedIcon: Icon(Icons.settings),
-                  icon: Icon(Icons.settings_outlined),
-                  label: Text('我的'),
-                ),
-                if (TvMode.enabled)
+                labelType: NavigationRailLabelType.selected,
+                destinations: <NavigationRailDestination>[
                   const NavigationRailDestination(
-                    selectedIcon: Icon(Icons.gamepad_rounded),
-                    icon: Icon(Icons.gamepad_outlined),
-                    label: Text('遥控器'),
+                    selectedIcon: Icon(Icons.home),
+                    icon: Icon(Icons.home_outlined),
+                    label: Text('推荐'),
                   ),
-              ],
-              selectedIndex: selectedIndex,
-              onDestinationSelected: _selectDestination,
+                  const NavigationRailDestination(
+                    selectedIcon: Icon(Icons.timeline),
+                    icon: Icon(Icons.timeline_outlined),
+                    label: Text('时间表'),
+                  ),
+                  const NavigationRailDestination(
+                    selectedIcon: Icon(Icons.favorite),
+                    icon: Icon(Icons.favorite_border),
+                    label: Text('追番'),
+                  ),
+                  const NavigationRailDestination(
+                    selectedIcon: Icon(Icons.settings),
+                    icon: Icon(Icons.settings_outlined),
+                    label: Text('我的'),
+                  ),
+                  if (TvMode.enabled)
+                    const NavigationRailDestination(
+                      selectedIcon: Icon(Icons.gamepad_rounded),
+                      icon: Icon(Icons.gamepad_outlined),
+                      label: Text('遥控器'),
+                    ),
+                ],
+                selectedIndex: selectedIndex,
+                onDestinationSelected: _selectDestination,
+              ),
             ),
           ),
           Expanded(child: _outlet(context, borderRadius: borderRadius)),

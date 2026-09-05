@@ -186,6 +186,45 @@ class _PlayerItemPanelState extends State<PlayerItemPanel> {
   }
 
   Widget get danmakuTextField {
+    if (TvMode.enabled) {
+      return TextButton.icon(
+        focusNode: textFieldFocus,
+        onPressed: () async {
+          final hold = widget.acquirePlayerPanelHold();
+          try {
+            final message = await showDialog<String>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: const Text('发送弹幕'),
+                content: TextField(
+                  autofocus: true,
+                  controller: textController,
+                  decoration: const InputDecoration(hintText: '发个友善的弹幕'),
+                  onSubmitted: (value) => Navigator.pop(dialogContext, value),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('取消'),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.pop(dialogContext, textController.text),
+                    child: const Text('发送'),
+                  ),
+                ],
+              ),
+            );
+            if (mounted && message != null) await _submitDanmakuText(message);
+          } finally {
+            hold.release();
+            if (mounted) textFieldFocus.requestFocus();
+          }
+        },
+        icon: const Icon(Icons.edit_outlined, color: Colors.white),
+        label: const Text('发送弹幕', style: TextStyle(color: Colors.white)),
+      );
+    }
     return Observer(builder: (context) {
       return Container(
         constraints: isDesktop()
@@ -1127,7 +1166,8 @@ class _PlayerItemPanelState extends State<PlayerItemPanel> {
                           ),
                       ],
                     ),
-                    (!videoPageController.isFullscreen &&
+                    (!TvMode.enabled &&
+                            !videoPageController.isFullscreen &&
                             !isTablet() &&
                             !isDesktop())
                         ? Container()
