@@ -12,5 +12,8 @@ Future<void> main() async {
   final support = await getApplicationSupportDirectory();
   Hive.init('${support.path}/focus-fixture-only');
   await GStorage.init();
-  runApp(FocusFixtureApp());
+  runApp(FocusFixtureApp(
+    historyCount:
+        const int.fromEnvironment('TV_FIXTURE_HISTORY_COUNT', defaultValue: 5),
+  ));
 }

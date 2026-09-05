@@ -362,6 +362,99 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  Future<FocusNode?> pendingHistoryScroll(WidgetTester tester,
+      {bool fromMore = false}) async {
+    await mount(tester,
+        FocusFixtureApp(initialRoute: '/tab/history/', historyCount: 25));
+    tester
+        .widget<BangumiHistoryCardV>(find.byType(BangumiHistoryCardV).first)
+        .focusNode!
+        .requestFocus();
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 2; i++) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+    }
+    if (fromMore) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pumpAndSettle();
+    }
+    final origin = FocusManager.instance.primaryFocus;
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump(const Duration(milliseconds: 10));
+    return origin;
+  }
+
+  testWidgets('UI04 pending DOWN cannot steal newer RIGHT More focus',
+      (tester) async {
+    await pendingHistoryScroll(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    final latest = FocusManager.instance.primaryFocus;
+    expect(latest?.debugLabel, 'TV history more');
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus, same(latest));
+    expect(latest!.rect.top, greaterThanOrEqualTo(56));
+    expect(latest.rect.bottom, lessThanOrEqualTo(540));
+  });
+
+  testWidgets('UI04 pending DOWN from More cannot steal newer local LEFT',
+      (tester) async {
+    await pendingHistoryScroll(tester, fromMore: true);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    final latest = FocusManager.instance.primaryFocus;
+    expect(latest?.debugLabel, 'TV history 本地测试源5::online');
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus, same(latest));
+  });
+
+  testWidgets('UI04 pending DOWN then LEFT retains rail focus', (tester) async {
+    await pendingHistoryScroll(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    final latest = FocusManager.instance.primaryFocus;
+    expect(latest!.ancestors.any((n) => n.debugLabel == 'TV navigation rail'),
+        isTrue);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus, same(latest));
+  });
+
+  testWidgets('UI04 pending DOWN then More menu and native BACK restores More',
+      (tester) async {
+    await pendingHistoryScroll(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    final more = FocusManager.instance.primaryFocus;
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump(const Duration(milliseconds: 10));
+    expect(find.text('历史操作'), findsOneWidget);
+    await rootNavigatorKey.currentState!.maybePop();
+    await tester.pumpAndSettle();
+    expect(find.text('历史操作'), findsNothing);
+    expect(FocusManager.instance.primaryFocus, same(more));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('UI04 native BACK during pending DOWN leaves history safely',
+      (tester) async {
+    await pendingHistoryScroll(tester);
+    await rootNavigatorKey.currentState!.maybePop();
+    await tester.pumpAndSettle();
+    expect(find.byType(HistoryPage), findsNothing);
+    expect(find.byType(PopularPage), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('UI04 repeated pending DOWN still realizes target',
+      (tester) async {
+    await pendingHistoryScroll(tester);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump(const Duration(milliseconds: 10));
+    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.arrowDown);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel,
+        'TV history 本地测试源7::online');
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('UI03 mobile search keeps SearchAnchor instead of the TV editor',
       (tester) async {
     TvMode.setEnabledForTesting(false);

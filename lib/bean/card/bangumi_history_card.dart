@@ -91,6 +91,7 @@ class BangumiHistoryCardV extends StatefulWidget {
     this.onDeleted,
     this.focusNode,
     this.onKeyEvent,
+    this.onNavigationInput,
   });
 
   final History historyItem;
@@ -98,6 +99,9 @@ class BangumiHistoryCardV extends StatefulWidget {
   final FutureOr<void> Function()? onDeleted;
   final FocusNode? focusNode;
   final FocusOnKeyEventCallback? onKeyEvent;
+
+  /// Invalidates pending page navigation before local controls consume input.
+  final VoidCallback? onNavigationInput;
 
   @override
   State<BangumiHistoryCardV> createState() => _BangumiHistoryCardVState();
@@ -116,6 +120,13 @@ class _BangumiHistoryCardVState extends State<BangumiHistoryCardV> {
 
   FocusNode get _resumeFocus => widget.focusNode ?? _cardFocus;
 
+  void _notifyNavigationInput(KeyEvent event) {
+    if ((event is KeyDownEvent || event is KeyRepeatEvent) &&
+        event.logicalKey != LogicalKeyboardKey.arrowDown) {
+      widget.onNavigationInput?.call();
+    }
+  }
+
   @override
   void dispose() {
     _queryRoadsCancelToken?.cancel();
@@ -125,6 +136,7 @@ class _BangumiHistoryCardVState extends State<BangumiHistoryCardV> {
   }
 
   Future<void> _onTap({bool resumeFromMenu = false}) async {
+    widget.onNavigationInput?.call();
     if (widget.showDelete && !resumeFromMenu) {
       if (TvMode.enabled) {
         await _confirmDelete(_resumeFocus);
@@ -190,6 +202,7 @@ class _BangumiHistoryCardVState extends State<BangumiHistoryCardV> {
   }
 
   Future<void> _showMore() async {
+    widget.onNavigationInput?.call();
     if (_menuOpen) return;
     _menuOpen = true;
     final action = await showDialog<String>(
@@ -254,6 +267,7 @@ class _BangumiHistoryCardVState extends State<BangumiHistoryCardV> {
           focusScale: 1,
           focusNode: _resumeFocus,
           onKeyEvent: (node, event) {
+            _notifyNavigationInput(event);
             if (TvMode.enabled &&
                 (event is KeyDownEvent || event is KeyRepeatEvent) &&
                 event.logicalKey == LogicalKeyboardKey.arrowRight) {
@@ -431,6 +445,7 @@ class _BangumiHistoryCardVState extends State<BangumiHistoryCardV> {
                 borderRadius: 24,
                 onPressed: _showMore,
                 onKeyEvent: (node, event) {
+                  _notifyNavigationInput(event);
                   if ((event is KeyDownEvent || event is KeyRepeatEvent) &&
                       event.logicalKey == LogicalKeyboardKey.arrowLeft) {
                     _resumeFocus.requestFocus();

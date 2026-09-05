@@ -216,3 +216,58 @@ flutter build apk --release --flavor tv --build-number 203017 --build-name 2.3.0
 **仍未关闭的验收门：**实体遥控器 / 小米电视复测，在线搜索与网络历史续播出画，真实播放器面板集成，
 搜索记录删除后的长列表焦点细节、所有设置 / 图片搜索子页、长时间 A/V / 内存稳定性。
 自动测试数与离线截图不替代这些项目；公开 Preview 2 的标签、APK 和发行说明未因本批修改而改变。
+
+<a id="ui04-race-followup"></a>
+
+## UI-04 审查补修：异步滚动不能抢回新焦点（2026-09-06）
+
+针对 `46d72fe` 的追加修复，仍在 `codex/tv-focus-ui01-ui04` 独立工作树，未合并 / 推送 / 发布，未操作实体电视。
+
+### 已复现的缺口与修复
+
+主会话提供的真实 HistoryPage 探针在原提交复现失败：960×540、25 条历史，从首卡 DOWN 两次，
+再 DOWN 触发滚动，10 ms 后 RIGHT 到当前卡“更多”。滚动完成后旧请求抢到样例 7。
+`artifacts/review-fast-before.log` 保留原失败；原 235 项测试没有覆盖此时序，不作为这项的通过证据。
+
+- 卡片本地 RIGHT / LEFT 会提前返回 handled，绕过页面取消逻辑。新增 `onNavigationInput`，在本地处理前通知页面；
+  点击 / 确认续播和更多入口也取消旧请求，不只依赖键事件向父层冒泡。
+- 保留请求序号，并检查原焦点归属。只因滚动而脱离组件树的原节点允许正常离屏加载；
+  原节点仍挂载却已失焦时，不允许旧请求覆盖另一控件。
+- 原生返回与 dispose 使待处理请求失效；非 DOWN 输入还停止旧滚动动画。
+  模拟器中间包 203020 曾出现“焦点逻辑保留，但原卡被旧动画滚出屏幕”，因此它不作为最终验收包。
+- 新测试正式放入 `test/tv_focus_regression_test.dart`，不依赖 artifacts 探针：
+  DOWN→RIGHT、从更多 DOWN→本地 LEFT、DOWN→侧栏 LEFT、DOWN→更多→原生返回、DOWN→页面原生返回，
+  连续 DOWN / repeat。RIGHT 场景同时断言新焦点完整位于 56～540 的可见纵向范围。
+  原 25 条历史越屏和末尾循环测试仍保留。
+
+### 验证与本地包
+
+- 专项文件共 23 项通过（原 17 + 新增 6），修改文件静态分析通过；未改限流器代码或测试。
+- 最终代码 `flutter test --no-pub --concurrency=1`：**241 项全部通过**，日志 `artifacts/all-tests-ui04-race-final.log`。
+- 全量前两次均为 240 通过 / 1 失败：既有限流器并发计时测试分别测得 0 ms / 19 ms，要求至少 35 ms。
+  日志 `all-tests-ui04-race.log`、`all-tests-ui04-race-serial.log` 保留。构建停止后该文件独立运行 4 项通过，
+  后续串行全量运行也通过；不能把先前失败隐藏成从未发生，也不据此宣称计时稳定性已修复。
+- AVD 仍仅 `Kazumi_Focus_UI_API36` / `emulator-5562`，Google TV API 36、x86_64、1920×1080。
+  快速注入使用同一个 shell 的 `input keyevent 20; sleep 0.01; input keyevent 22`；命令与事件分发有额外延迟，
+  **精确 10 ms 的时序证据来自组件测试，不把 ADB 命令延时当成端到端事件间隔测量。**
+- 正常包使用原 `lib/main.dart`，模拟入口仅在 test/support；新增 `TV_FIXTURE_HISTORY_COUNT=25` 也只由模拟入口读取。
+  真实网络历史续播、实体遥控器与其他 UI 待办仍未在本次扩大验收。
+- 最终 203022 AVD 从样例 5 发出 DOWN→RIGHT，等待后焦点仍是样例 5 的“更多”且完整可见；
+  再 OK 打开菜单、原生返回，仍回到同一可见入口。[实测截图](screenshots/ui-focus-local/history-fast-right.png)。
+  精确快速 LEFT / 页面返回与 repeat 的时序由正式组件测试覆盖，未逐项宣称同等精度的 ADB 验收。
+
+模拟包 `build/Kazumi-TV-2.3.0-focus-race-fixture-203022-debug.apk` 的 SHA-256 已与 AVD base.apk 核对一致：
+`4285c95f30facc2e5ac417a6c90b2d3f128ff1241b21d6121e5de90cb6101994`。
+
+正常 Release 包 `build/Kazumi-TV-2.3.0-focus-race-test-203021.apk`，版本 2.3.0-focus-race-test / 203021，
+SHA-256：`e53032a7944f3c68c96a6a4b2085e3011dfb9f86192615b8546525d087fc0373`。
+已覆盖安装回同一 AVD 并核对 base.apk 哈希，冷启动返回 ok；不据此声称网络或真实播放通过。
+本轮新包仅本地保存，203019 / 203020 是中间包，公开 Release 未变。
+
+重现构建：
+
+```sh
+flutter test --no-pub --concurrency=1
+flutter build apk --debug --flavor tv --build-number 203022 --build-name 2.3.0-focus-race-fixture --target test/support/tv_focus_fixture_app.dart --dart-define=TV_FIXTURE_HISTORY_COUNT=25 --no-pub
+flutter build apk --release --flavor tv --build-number 203021 --build-name 2.3.0-focus-race-test --no-pub
+```

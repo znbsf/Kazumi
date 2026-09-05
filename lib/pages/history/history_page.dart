@@ -32,6 +32,16 @@ class _HistoryPageState extends State<HistoryPage> {
   final _scrollController = ScrollController();
   int _focusRequest = 0;
 
+  void _cancelFocusRequest() {
+    _focusRequest++;
+    // Cancel the old viewport motion too: otherwise a newer More focus can
+    // remain logically selected while its card is scrolled off screen.
+    if (_scrollController.hasClients &&
+        _scrollController.position.isScrollingNotifier.value) {
+      _scrollController.jumpTo(_scrollController.offset);
+    }
+  }
+
   Future<void> _focusHistory(int index, int columns) async {
     final node = _focusFor(historyController.histories[index]);
     final origin = FocusManager.instance.primaryFocus;
@@ -54,6 +64,10 @@ class _HistoryPageState extends State<HistoryPage> {
     if (mounted &&
         node.context != null &&
         request == _focusRequest &&
+        // A viewport eviction may detach the old node and choose a fallback.
+        // An attached origin losing focus to another control is not that case.
+        (FocusManager.instance.primaryFocus == origin ||
+            origin?.parent == null) &&
         originScope?.hasFocus == true) {
       node.requestFocus();
     }
@@ -64,6 +78,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   void dispose() {
+    _focusRequest++;
     for (final node in _focusNodes.values) {
       node.dispose();
     }
@@ -93,6 +108,7 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   void onBackPressed(BuildContext context) {
+    _cancelFocusRequest();
     if (KazumiDialog.observer.hasKazumiDialog) {
       KazumiDialog.dismiss();
       return;
@@ -238,6 +254,8 @@ class _HistoryPageState extends State<HistoryPage> {
                   key: ValueKey(history.key),
                   historyItem: history,
                   focusNode: TvMode.enabled ? _focusFor(history) : null,
+                  onNavigationInput:
+                      TvMode.enabled ? _cancelFocusRequest : null,
                   onKeyEvent: (_, event) {
                     if (!TvMode.enabled ||
                         (event is! KeyDownEvent && event is! KeyRepeatEvent)) {
