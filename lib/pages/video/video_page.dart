@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:canvas_danmaku/models/danmaku_content_item.dart';
 import 'package:flutter/material.dart';
+import 'package:kazumi/bean/widget/episode_tile.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:kazumi/pages/player/player_controller.dart';
@@ -30,7 +31,6 @@ import 'package:kazumi/utils/device.dart';
 import 'package:kazumi/services/platform/display_mode_service.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
 import 'package:mobx/mobx.dart' as mobx;
-import 'package:kazumi/bean/widget/tv_focusable_surface.dart';
 import 'package:kazumi/bean/widget/tv_focus_navigation.dart';
 import 'package:kazumi/bean/widget/tv_player_side_panel.dart';
 
@@ -1124,63 +1124,13 @@ class _VideoPageState extends State<VideoPage>
               unawaited(changeEpisode(count0, currentRoad: visibleRoad));
             }
 
-            final card = Material(
-              color: Theme.of(context).colorScheme.onInverseSurface.withValues(
-                    alpha: TvMode.enabled ? 0.30 : 1,
-                  ),
-              borderRadius: BorderRadius.circular(6),
-              clipBehavior: Clip.hardEdge,
-              child: InkWell(
-                canRequestFocus: !TvMode.enabled,
-                onTap: selectEpisode,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: TvMode.enabled ? 5 : 8,
-                    horizontal: TvMode.enabled ? 8 : 10,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: [
-                          if (isSelected) ...<Widget>[
-                            Image.asset(
-                              'assets/images/playing.gif',
-                              color: Theme.of(context).colorScheme.primary,
-                              height: 12,
-                            ),
-                            const SizedBox(width: 6)
-                          ],
-                          Expanded(
-                            child: Text(
-                              episodeName,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: TvMode.enabled ? 12 : 13,
-                                color: isSelected
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(context).colorScheme.onSurface,
-                              ),
-                            ),
-                          ),
-                          _buildDownloadStatusIcon(count0, urlItem),
-                          const SizedBox(width: 2),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
             cardList.add(Container(
               margin: const EdgeInsets.only(bottom: 2),
-              child: TvFocusableSurface(
-                enabled: TvMode.enabled,
+              child: EpisodeTile(
+                label: episodeName,
+                isPlaying: isSelected,
+                status: _buildDownloadStatusIcon(count0, urlItem),
                 focusNode: _episodeFocusNode(visibleRoad, count0),
-                autofocus: TvMode.enabled && isSelected,
-                highlighted: isSelected,
-                borderRadius: 6,
                 onPressed: selectEpisode,
                 onKeyEvent: (_, event) {
                   if (!TvMode.enabled ||
@@ -1204,7 +1154,6 @@ class _VideoPageState extends State<VideoPage>
                   }
                   return KeyEventResult.ignored;
                 },
-                child: card,
               ),
             ));
             count++;

@@ -97,6 +97,7 @@ class BangumiCardV extends StatelessWidget {
       ),
     );
     return TvFocusableSurface(
+      focusScale: channelNumber != null ? 1 : 1.035,
       onPressed: openBangumi,
       onKeyEvent: onKeyEvent,
       focusNode: focusNode,

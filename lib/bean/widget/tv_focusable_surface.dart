@@ -15,6 +15,7 @@ class TvFocusableSurface extends StatefulWidget {
     this.highlighted = false,
     this.onFocusChange,
     this.onKeyEvent,
+    this.focusScale = 1.035,
   });
 
   final Widget child;
@@ -26,6 +27,9 @@ class TvFocusableSurface extends StatefulWidget {
   final bool highlighted;
   final ValueChanged<bool>? onFocusChange;
   final FocusOnKeyEventCallback? onKeyEvent;
+
+  /// Compact grids can keep the frame inside their scroll viewport.
+  final double focusScale;
 
   @override
   State<TvFocusableSurface> createState() => _TvFocusableSurfaceState();
@@ -94,7 +98,7 @@ class _TvFocusableSurfaceState extends State<TvFocusableSurface> {
         onFocusChange: _handleFocusChange,
         onKeyEvent: _handleKeyEvent,
         child: AnimatedScale(
-          scale: visuallyHighlighted ? 1.035 : 1,
+          scale: visuallyHighlighted ? widget.focusScale : 1,
           duration: const Duration(milliseconds: 140),
           curve: Curves.easeOut,
           child: AnimatedContainer(

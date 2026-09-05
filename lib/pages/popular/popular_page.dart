@@ -122,13 +122,17 @@ class _PopularPageState extends State<PopularPage> {
       LogicalKeyboardKey.arrowLeft => TraversalDirection.left,
       LogicalKeyboardKey.arrowRight => TraversalDirection.right,
       LogicalKeyboardKey.arrowDown => TraversalDirection.down,
+      LogicalKeyboardKey.arrowUp => TraversalDirection.up,
       _ => null,
     };
-    // Left of the first column remains a doorway to the navigation rail.
-    // UP keeps the category tabs reachable. The page/rail edges form the loop.
-    if (direction == null ||
-        (direction == TraversalDirection.left && index % columns == 0)) {
-      return KeyEventResult.ignored;
+    if (direction == null) return KeyEventResult.ignored;
+    if (direction == TraversalDirection.left && index % columns == 0) {
+      Actions.maybeInvoke(context, const TvFocusRailIntent());
+      return KeyEventResult.handled;
+    }
+    if (direction == TraversalDirection.up && index < columns) {
+      _focusNodeForTag(popularController.currentTag).requestFocus();
+      return KeyEventResult.handled;
     }
     final target = tvGridTarget(index, count, columns, direction) + 1;
     final node = _focusNodeForChannel(target);
@@ -654,7 +658,6 @@ class _PopularPageState extends State<PopularPage> {
       child: TvFocusableSurface(
         focusNode: _focusNodeForTag(tag),
         borderRadius: 22,
-        highlighted: selected,
         onKeyEvent: (node, event) {
           if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
             return KeyEventResult.ignored;
@@ -668,6 +671,24 @@ class _PopularPageState extends State<PopularPage> {
           if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
             _focusNodeForTag(tags[tvWrappedIndex(index, 1, tags.length)])
                 .requestFocus();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            _tagSelectionTimer?.cancel();
+            unawaited(_selectTag(tag).then((_) async {
+              if (!mounted || !node.hasFocus || _visibleBangumiList.isEmpty) {
+                return;
+              }
+              await _scrollToChannel(1);
+              if (mounted && node.hasFocus) {
+                _focusNodeForChannel(1).requestFocus();
+              }
+            }));
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            _tagSelectionTimer?.cancel();
+            Actions.maybeInvoke(context, const TvFocusRailIntent());
             return KeyEventResult.handled;
           }
           return KeyEventResult.ignored;

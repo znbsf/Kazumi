@@ -136,3 +136,83 @@ OK 的几何推测焦点改为显式播放/选集落点，子面板退出后根�
 - Android 9 的 `input keyevent` 不支持指定持有时长；未把 `--longpress` 当成应用要求的 900 ms 长返回验收。可见主页按钮已验证，实体遥控器长按仍待人工验证。
 - 本地合成弹幕可见且标注为本地示例，不代表官方在线弹幕成功；未验证听感、长期 A/V 同步、帧率/卡顿、所有来源或硬解性能。截图中持续出画只证明本次短程播放路径。
 - 本轮结束留在应用首页，归还电视；发现的问题保留待办，不将当前包标成全部遥控导航验收完成。
+
+<a id="ui01-ui04-local"></a>
+
+## UI-01～UI-04 独立分支本地回归（2026-09-06，未发布）
+
+基于 `f699c805763f57607a8da329b3b00089664f6d0c`，工作树 `Kazumi-tv-focus`，
+分支 `codex/tv-focus-ui01-ui04`。原默认分支保持不变，没有推送、创建 Release、修改线上附件或操作实体电视。
+UI-05～UI-12、验证码、手机接力和台标不在本批范围，播放内核 / 音频 / 硬解 / 弹幕凭据未修改。
+
+### 修改和对照
+
+- **UI-01：**主页首列 LEFT 显式发往侧栏；RIGHT 恢复原内容焦点。第一行 UP 回当前分类，分类 DOWN 进入首卡，
+  分类 UP 回侧栏；分类异步完成时不抢走已离开的焦点。详情路由返回恢复原卡片，而非强制跳搜索。
+- **UI-02：**分类选中使用填充和文字；选集播放状态保留原动态图标与主色文字，只有当前焦点使用粗框。
+  `EpisodeTile` 从原播放器中抽出复用，未重写播放逻辑；紧凑网格和搜索条不向视口外放大，以免裁掉边框。
+- **UI-03：**TV 使用可聚焦的只读入口，OK 才打开独立编辑层；保留图片搜索、最近十条搜索记录重用 / 删除。
+  搜索提交不再假定 SearchController 已挂在 SearchAnchor。手机版仍用原 SearchAnchor 分支。
+- **UI-04：**卡片 OK 仍调用原 HistoryPlaybackService；RIGHT 到独立“更多”，可继续观看、看详情、追番、删除。
+  删除需确认且默认取消，取消 / 返回恢复入口；删除后聚焦下一条，空列表有返回出口。
+  TV 历史按可用宽度选择列数，保留文字空间；长列表 DOWN 先实现离屏目标，末尾循环只落到真实记录。
+  新历史菜单 / 删除按钮显式描边，避免 Android 自动触摸高亮策略隐藏当前焦点。手机滑删和内部操作保持原分支。
+
+`test/tv_focus_baseline_probe_test.dart` 在基线工作树使用旧 SearchPage / HistoryPage / HistoryCard 运行：
+两项均按预期失败，分别是“搜索 OK 后未进入编辑”和“历史编辑 OK 没有删除确认”。
+日志 `artifacts/baseline-probes.log`。同一对照在修改后通过；这不是在实体电视重新运行旧 APK 的证据。
+
+### 自动测试
+
+- 最终 `flutter test --no-pub`：**235 项通过**，含基线对照 2 项和新回归 17 项；日志 `artifacts/all-tests.log`。
+- 修改的 11 个 Dart 生产文件、回归测试及 test/support 静态分析：**No issues found**；`git diff --check` 通过。
+- 覆盖真实应用壳层 / 页面，不只验证网格索引：首列侧栏往返、详情返回、空分类、单项 / 31 项不齐行网格，
+  搜索明确激活 / 取消 / 提交，真实追番菜单的 `Navigator.maybePop` 逐层返回，续播参数、删除取消 / 下一条 / 空列表，
+  25 条历史越屏和末尾循环，854×480 / 1280×720 逻辑尺寸与 1.25 倍字体、原手机版搜索分支。
+- 深浅主题的真实 EpisodeTile 验证：焦点移到第二集时只有一条焦点框，第一集的播放动态图标仍存在。
+  这不等于真实视频背景、全部选集面板控件或所有主题对比度已验收。
+
+### 独立模拟器操作
+
+AVD `Kazumi_Focus_UI_API36`，Google TV API 36 / x86_64，1920×1080（逻辑 960×540）。
+所有 ADB 操作显式指定 `-s emulator-5562`；没有操作另一台 AVD 或实体 MiTV。
+
+离线入口在 `test/support/tv_focus_fixture_app.dart`，使用实际主页 / 搜索页 / 历史页 / 选集组件，
+但番剧、历史与服务结果是合成数据，详情和续播终点是注明用途的占位路由，**没有真实视频播放**。
+Hive 目录为独立 `focus-fixture-only`。这些入口不被 `lib/` 或正常 main 导入，正常 APK 不启用它们。
+
+| 注入操作与观察 | 包 / 证据 |
+| --- | --- |
+| 主页第 7 卡 LEFT 回侧栏，RIGHT 恢复同卡和原滚动位置，热门分类未切换 | 203014；[恢复截图](screenshots/ui-focus-local/home-restored.png)；本地另有 `ui01-rail-203014.png` |
+| 第 1 集标记在播，焦点 LEFT 循环到第 4 集，只有第 4 集粗框 | 203014；[真实选集组件状态样例](screenshots/ui-focus-local/episode-focus.png)，非真实 VideoPage 出画 |
+| 搜索方向键到图片搜索再返回输入入口，无键盘；OK 打开系统键盘 | 203014 / 最终 203018；系统 `mInputShown=false → true`；[最终入口](screenshots/ui-focus-local/search-entry.png) |
+| 原生 BACK 第一次收键盘且输入层仍在，第二次关闭输入层并恢复入口，第三次返回原壳层 | 203014 / 203018；本地 `ui03-back1-203014.png`、`ui03-ok-ime-203014.png` |
+| 历史 RIGHT 到更多，OK 打开，方向键进入追番子菜单，BACK 逐层退出并恢复入口 | 203014；本地 `ui04-collection-203014.png`、`ui04-cancel-restored-203014.png`；最终 [更多焦点](screenshots/ui-focus-local/history-more.png) |
+| 删除先落在取消；BACK 不删除，再确认后只删除样例 1，焦点落在样例 2 | 最终 203018；[确认框](screenshots/ui-focus-local/delete-confirm.png)；本地 `ui04-deleted-next-203018.png` |
+| 最终历史页为两列，样例标题和来源可读；保留原配色与卡片结构 | 最终 203018；[历史页](screenshots/ui-focus-local/history.png) |
+| 安装正常入口的 Release 构建，冷启动显示欢迎 / 声明页，没有出现模拟主页 | 203017；本地 `normal-203017-start.png`；未将初始化页当成网络源或播放验收 |
+
+调试包曾在并行构建期间冷启动超过窗口输入等待，过早注入 OK 导致一次输入 ANR；该组按键和过渡截图作废。
+重新等待应用窗口就绪后执行上述操作，最终正常包冷启动 `am start -W` 返回 ok（约 1.3 秒）。
+不据此推断长期性能或已修复启动性能问题。203012 / 203014 / 203016 是中间验证包，最终样式包为 203018。
+
+### 最终本地产物与重现
+
+```sh
+flutter test --no-pub
+flutter build apk --debug --flavor tv --build-number 203018 --build-name 2.3.0-focus-fixture --target test/support/tv_focus_fixture_app.dart --no-pub
+flutter build apk --release --flavor tv --build-number 203017 --build-name 2.3.0-focus-test --no-pub
+```
+
+| 本地 build/ 文件 | SHA-256（已与对应 AVD base.apk 核对一致） |
+| --- | --- |
+| `Kazumi-TV-2.3.0-focus-test-203017.apk`，正常入口 universal Release | `5138268518c8ee30f0d64d760f74428beaae487f93f19174b8856bea6f6a579b` |
+| `Kazumi-TV-2.3.0-focus-fixture-203018-debug.apk`，仅离线验证用 | `9b7d3d5ae5e5f3e45597272536ff2b567bc09dea99dd22e915dc0790850b52cc` |
+
+两者包名均为 `com.znbsf.kazumi.tv`，不能同时安装。验证后 AVD 留在正常 203017 包的欢迎页；
+从可调试 fixture 覆盖回正常包时使用 `adb install -r -d`，没有清数据或接触用户电视。
+构建保留原工具链；Gradle / AGP / Kotlin 后续支持和 Java 8 过时警告未在本批升级。
+
+**仍未关闭的验收门：**实体遥控器 / 小米电视复测，在线搜索与网络历史续播出画，真实播放器面板集成，
+搜索记录删除后的长列表焦点细节、所有设置 / 图片搜索子页、长时间 A/V / 内存稳定性。
+自动测试数与离线截图不替代这些项目；公开 Preview 2 的标签、APK 和发行说明未因本批修改而改变。

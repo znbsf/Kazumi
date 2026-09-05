@@ -21,6 +21,8 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
   final _outletKey = GlobalKey<RouterOutletState>();
   final _searchFocusNode = FocusNode(debugLabel: 'TV search entry');
   final _railFocusScope = FocusScopeNode(debugLabel: 'TV navigation rail');
+  final _contentFocusScope = FocusScopeNode(debugLabel: 'TV content');
+  bool _restoreContentAfterRoute = false;
   DateTime? _lastExitPromptAt;
   bool _didScheduleInitialTvFocus = false;
 
@@ -46,6 +48,7 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
     rootRouteObserver.unsubscribe(this);
     _searchFocusNode.dispose();
     _railFocusScope.dispose();
+    _contentFocusScope.dispose();
     super.dispose();
   }
 
@@ -55,7 +58,14 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
   @override
   void didPopNext() {
     _setCovered(false);
-    _requestTvEntryFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isCovered || !TvMode.enabled) return;
+      if (_restoreContentAfterRoute) {
+        _contentFocusScope.requestFocus();
+      } else {
+        _railFocusScope.requestFocus();
+      }
+    });
   }
 
   void _requestTvEntryFocus() {
@@ -71,6 +81,7 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
       return;
     }
     if (value) {
+      _restoreContentAfterRoute = _contentFocusScope.hasFocus;
       tvChannelInputController.cancel();
     }
     setState(() => _isCovered = value);
@@ -168,25 +179,35 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
       child: RouterOutlet(key: _outletKey),
     );
     if (TvMode.enabled) {
-      child = Focus(
-        canRequestFocus: false,
-        onKeyEvent: (_, event) {
-          if ((event is KeyDownEvent || event is KeyRepeatEvent) &&
-              event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-            final current = FocusManager.instance.primaryFocus;
-            if (current?.context?.widget is EditableText) {
-              return KeyEventResult.ignored;
-            }
-            if (current != null &&
-                !ReadingOrderTraversalPolicy()
-                    .inDirection(current, TraversalDirection.left)) {
+      child = Actions(
+        actions: {
+          TvFocusRailIntent: CallbackAction<TvFocusRailIntent>(
+            onInvoke: (_) {
               _railFocusScope.requestFocus();
-            }
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
+              return null;
+            },
+          ),
         },
-        child: child,
+        child: FocusScope(
+          node: _contentFocusScope,
+          onKeyEvent: (_, event) {
+            if ((event is KeyDownEvent || event is KeyRepeatEvent) &&
+                event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+              final current = FocusManager.instance.primaryFocus;
+              if (current?.context?.widget is EditableText) {
+                return KeyEventResult.ignored;
+              }
+              if (current != null &&
+                  !ReadingOrderTraversalPolicy()
+                      .inDirection(current, TraversalDirection.left)) {
+                _railFocusScope.requestFocus();
+              }
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: child,
+        ),
       );
     }
     if (borderRadius != null) {
@@ -269,6 +290,10 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
                   return KeyEventResult.handled;
                 }
                 if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+                  if (_contentFocusScope.focusedChild != null) {
+                    _contentFocusScope.requestFocus();
+                    return KeyEventResult.handled;
+                  }
                   _railFocusScope.directionalTraversalEdgeBehavior =
                       TraversalEdgeBehavior.parentScope;
                   ReadingOrderTraversalPolicy()

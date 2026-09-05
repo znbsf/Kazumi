@@ -12,6 +12,8 @@ import 'package:kazumi/services/logging/logger.dart';
 import 'package:kazumi/utils/constants.dart';
 import 'package:kazumi/utils/date_time.dart';
 import 'package:kazumi/utils/search_parser.dart';
+import 'package:kazumi/bean/widget/tv_search_entry.dart';
+import 'package:kazumi/services/platform/tv_mode.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({
@@ -221,7 +223,7 @@ class _SearchPageState extends State<SearchPage> {
     final normalizedValue = SearchParser.fromFilterState(parsed);
     _setSearchText(normalizedValue);
     await searchPageController.searchBangumi(normalizedValue, type: 'init');
-    if (searchController.isOpen) {
+    if (searchController.isAttached && searchController.isOpen) {
       searchController.closeView(normalizedValue);
     }
   }
@@ -242,77 +244,120 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            child: FocusScope(
-              descendantsAreFocusable: false,
-              child: SearchAnchor.bar(
-                searchController: searchController,
-                barElevation: WidgetStateProperty<double>.fromMap(
-                  <WidgetStatesConstraint, double>{WidgetState.any: 0},
-                ),
-                viewElevation: 0,
-                viewLeading: IconButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  icon: const Icon(Icons.arrow_back),
-                ),
-                barTrailing: [
-                  IconButton(
-                    tooltip: '图片搜索',
-                    onPressed: () async {
-                      final result = await context.pushNamed('/search/image');
-                      if (result is String && result.isNotEmpty) {
-                        await _applyFilterState(
-                          SearchParser(result).toFilterState(),
-                          search: true,
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.image_search_rounded),
-                  ),
-                ],
-                isFullScreen: MediaQuery.sizeOf(context).width <
-                    LayoutBreakpoint.compact['width']!,
-                suggestionsBuilder: (context, controller) => [
-                  Observer(
-                    builder: (context) {
-                      if (controller.text.isNotEmpty) {
-                        return const SizedBox(
-                          height: 400,
-                          child: Center(
-                            child: Text("暂无搜索建议，按回车直接检索"),
-                          ),
-                        );
-                      } else {
-                        return Column(
+            child: TvMode.enabled
+                ? Row(children: [
+                    Expanded(
+                        child: TvSearchEntry(
+                      controller: searchController,
+                      onSubmitted: _submitSearch,
+                      suggestionsBuilder: (dialogContext) => Observer(
+                        builder: (_) => Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            for (var history in searchPageController
+                            for (final history in searchPageController
                                 .searchHistories
                                 .take(10))
                               ListTile(
                                 title: Text(history.keyword),
-                                onTap: () {
-                                  controller.text = history.keyword;
-                                  _submitSearch(controller.text);
-                                },
+                                onTap: () => Navigator.of(dialogContext)
+                                    .pop(history.keyword),
                                 trailing: IconButton(
+                                  tooltip: '删除搜索记录',
                                   icon: const Icon(Icons.close),
-                                  onPressed: () {
-                                    searchPageController
-                                        .deleteSearchHistory(history);
-                                  },
+                                  onPressed: () => searchPageController
+                                      .deleteSearchHistory(history),
                                 ),
                               ),
                           ],
-                        );
-                      }
-                    },
+                        ),
+                      ),
+                    )),
+                    IconButton(
+                      tooltip: '图片搜索',
+                      icon: const Icon(Icons.image_search_rounded),
+                      onPressed: () async {
+                        final result = await context.pushNamed('/search/image');
+                        if (!mounted) return;
+                        if (result is String && result.isNotEmpty) {
+                          await _applyFilterState(
+                              SearchParser(result).toFilterState(),
+                              search: true);
+                        }
+                      },
+                    ),
+                  ])
+                : FocusScope(
+                    descendantsAreFocusable: false,
+                    child: SearchAnchor.bar(
+                      searchController: searchController,
+                      barElevation: WidgetStateProperty<double>.fromMap(
+                        <WidgetStatesConstraint, double>{WidgetState.any: 0},
+                      ),
+                      viewElevation: 0,
+                      viewLeading: IconButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                      barTrailing: [
+                        IconButton(
+                          tooltip: '图片搜索',
+                          onPressed: () async {
+                            final result =
+                                await context.pushNamed('/search/image');
+                            if (result is String && result.isNotEmpty) {
+                              await _applyFilterState(
+                                SearchParser(result).toFilterState(),
+                                search: true,
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.image_search_rounded),
+                        ),
+                      ],
+                      isFullScreen: MediaQuery.sizeOf(context).width <
+                          LayoutBreakpoint.compact['width']!,
+                      suggestionsBuilder: (context, controller) => [
+                        Observer(
+                          builder: (context) {
+                            if (controller.text.isNotEmpty) {
+                              return const SizedBox(
+                                height: 400,
+                                child: Center(
+                                  child: Text("暂无搜索建议，按回车直接检索"),
+                                ),
+                              );
+                            } else {
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  for (var history in searchPageController
+                                      .searchHistories
+                                      .take(10))
+                                    ListTile(
+                                      title: Text(history.keyword),
+                                      onTap: () {
+                                        controller.text = history.keyword;
+                                        _submitSearch(controller.text);
+                                      },
+                                      trailing: IconButton(
+                                        icon: const Icon(Icons.close),
+                                        onPressed: () {
+                                          searchPageController
+                                              .deleteSearchHistory(history);
+                                        },
+                                      ),
+                                    ),
+                                ],
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                      onSubmitted: _submitSearch,
+                    ),
                   ),
-                ],
-                onSubmitted: _submitSearch,
-              ),
-            ),
           ),
           Observer(
             builder: (_) {

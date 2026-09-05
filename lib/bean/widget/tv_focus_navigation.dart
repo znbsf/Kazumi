@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+/// An explicit doorway out of a content grid, before geometric traversal can
+/// select an unrelated category above it. The app shell owns the rail target.
+class TvFocusRailIntent extends Intent {
+  const TvFocusRailIntent();
+}
+
 /// At a page edge, wrap within the active scope, never into a covered route.
 /// Explicit component handlers (player rows / rail / grids) run first.
 class TvLoopTraversalPolicy extends ReadingOrderTraversalPolicy {
