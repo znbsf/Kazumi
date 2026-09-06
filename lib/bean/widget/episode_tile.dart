@@ -4,6 +4,17 @@ import 'package:kazumi/services/platform/tv_mode.dart';
 
 /// The playing indicator is persistent state; the outer frame is focus only.
 class EpisodeTile extends StatelessWidget {
+  static const _tvFontSize = 12.0;
+  static const _tvLineHeight = 1.4;
+
+  /// Two lines plus focus frame (10), inner padding (10) and row margin (2).
+  /// Keep the compact grid usable with TV accessibility text scaling too.
+  static double tvGridMainAxisExtent(BuildContext context) => (22 +
+          MediaQuery.textScalerOf(context).scale(_tvFontSize) *
+              _tvLineHeight *
+              2)
+      .ceilToDouble();
+
   const EpisodeTile(
       {super.key,
       required this.label,
@@ -59,7 +70,8 @@ class EpisodeTile extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                  fontSize: TvMode.enabled ? 12 : 13,
+                                  fontSize: TvMode.enabled ? _tvFontSize : 13,
+                                  height: TvMode.enabled ? _tvLineHeight : null,
                                   color: isPlaying
                                       ? colors.primary
                                       : colors.onSurface))),

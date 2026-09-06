@@ -18,6 +18,12 @@
              Only the TV flavor opts out; mobile gesture navigation is unchanged. -->
         <activity android:name=".MainActivity"
             android:enableOnBackInvokedCallback="false">
+            <!-- Some vendor TV app drawers query LAUNCHER, not LEANBACK.
+                 Both entries resolve to the same TV activity and package. -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />

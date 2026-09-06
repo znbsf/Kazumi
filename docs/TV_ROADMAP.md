@@ -4,7 +4,15 @@
 [README](../README.md#ui-plan)，历史轮次的完成项不代表新发现的问题已修复。项目继续遵守上游
 GPL-3.0；TV 公开测试 APK 使用自有几何电视标识，不打包需单独授权的上游人物图标。
 
-## 公开测试版 Preview 2
+## 当前公开测试版 Preview 3
+
+- `v2.3.0-tv-preview.3` / `203026` 发布同一真机验证 APK，仅重命名文件，内部版本仍为 `2.3.0-tv-device-test`。
+- UI-01～UI-04 焦点、搜索和历史修复，追加旧滚动请求取消、两行选集标题行高，以及普通电视桌面 LAUNCHER 入口。
+- 发布前 250 项测试通过；AVD 开发包完成组件 / 本地媒体回归，203026 完成小米电视桌面启动及短程真实续播检查。
+- 本包不含演示弹幕或在线弹幕凭证；暂停 seek 进度保存（UI-13）、网络错误反馈（UI-10）、上游渠道文案（UI-12）仍未修复。
+- [下载 Preview 3](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.3) · [发行说明](TV_PREVIEW_3.md) · [真机记录](TV_DEVICE_203026.md)。
+
+## 公开测试版 Preview 2（历史）
 
 - 版本 `v2.3.0-tv-preview.2` / `203010`，发布已在 AVD 与实体电视核对过哈希的同一 APK。
 - 包含详情页主操作区、菜单逐层返回、透明选集、播放器循环、主页入口和详情媒体键续播。
@@ -16,8 +24,9 @@ GPL-3.0；TV 公开测试 APK 使用自有几何电视标识，不打包需单�
 
 ## 发布后 UI 审查与本地修复（2026-09-06）
 
-当前公开 APK 仍为 Preview 2 / 203010。后续修复在独立分支 `codex/tv-focus-ui01-ui04`，
-不推进发行标签或更新线上附件；本轮只操作独立 Google TV 模拟器，不操作实体电视。
+以下保留本轮当时的状态：当时公开 APK 为 Preview 2 / 203010，修复在独立分支 `codex/tv-focus-ui01-ui04`，
+不推进发行标签或更新线上附件；该轮只操作独立 Google TV 模拟器，不操作实体电视。
+后续合并、发布及用户授权的真机测试见上方 Preview 3，不将各轮证据混为一次验收。
 完整 UI-01～UI-12 待办及验收要求记录在 [README 的 UI 计划](../README.md#ui-plan)。
 
 - **UI-01 / UI-02 本地实现：**显式侧栏出口与焦点恢复；当前焦点独占粗框，播放 / 分类选中保留独立状态标识。
@@ -102,7 +111,7 @@ flavors 分别发布手机与电视安装包。
 
 | 阶段 | 目标 | 当前状态 |
 | --- | --- | --- |
-| 第一阶段 | 可独立安装和使用的 Android TV 版本 | Preview 2 已公开测试；已有 AVD 与 Android 9 真机记录，导航、来源兼容及长期稳定性仍待收口，不是稳定版完成 |
+| 第一阶段 | 可独立安装和使用的 Android TV 版本 | Preview 3 已公开测试；已有 AVD 与 Android 9 真机记录，进度保存、导航、来源兼容及长期稳定性仍待收口，不是稳定版完成 |
 | 第二阶段 | 手机发现电视并从当前节目、来源和时间点接力播放 | 待第一阶段验收后开始 |
 
 ## 第一阶段：Android TV 版本
@@ -112,7 +121,7 @@ flavors 分别发布手机与电视安装包。
 | Flavor | 安装包 | Application ID | 启动入口 |
 | --- | --- | --- | --- |
 | `mobile` | Kazumi Mobile | `com.predidit.kazumi` | `LAUNCHER` |
-| `tv` | Kazumi TV | `com.znbsf.kazumi.tv` | `LEANBACK_LAUNCHER` |
+| `tv` | Kazumi TV | `com.znbsf.kazumi.tv` | `LEANBACK_LAUNCHER` + `LAUNCHER`（同一 TV Activity） |
 
 两个 flavor 共享 `lib/`、播放器、规则和数据层，但 Manifest、包名、应用名称和
 TV Banner 分开。它们可以同时安装，也可以独立发布和更新。

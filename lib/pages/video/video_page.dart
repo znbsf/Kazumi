@@ -1169,7 +1169,9 @@ class _VideoPageState extends State<VideoPage>
                 crossAxisCount: TvMode.enabled ? 4 : 3,
                 crossAxisSpacing: TvMode.enabled ? 6 : 10,
                 mainAxisSpacing: TvMode.enabled ? 3 : 5,
-                mainAxisExtent: TvMode.enabled ? 52 : 70,
+                mainAxisExtent: TvMode.enabled
+                    ? EpisodeTile.tvGridMainAxisExtent(context)
+                    : 70,
               ),
               itemCount: cardList.length,
               itemBuilder: (context, index) {
