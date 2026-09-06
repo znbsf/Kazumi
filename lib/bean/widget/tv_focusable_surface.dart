@@ -16,6 +16,7 @@ class TvFocusableSurface extends StatefulWidget {
     this.onFocusChange,
     this.onKeyEvent,
     this.focusScale = 1.035,
+    this.ensureVisibleOnFocus = true,
   });
 
   final Widget child;
@@ -31,6 +32,9 @@ class TvFocusableSurface extends StatefulWidget {
   /// Compact grids can keep the frame inside their scroll viewport.
   final double focusScale;
 
+  /// Virtualized grids may own visibility by item geometry, not render bounds.
+  final bool ensureVisibleOnFocus;
+
   @override
   State<TvFocusableSurface> createState() => _TvFocusableSurfaceState();
 }
@@ -44,9 +48,11 @@ class _TvFocusableSurfaceState extends State<TvFocusableSurface> {
     if (_focused != focused) {
       setState(() => _focused = focused);
     }
-    if (focused) {
+    if (focused && widget.ensureVisibleOnFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+        if (!mounted || !_focused || widget.focusNode?.hasFocus == false) {
+          return;
+        }
         Scrollable.ensureVisible(
           context,
           duration: const Duration(milliseconds: 160),

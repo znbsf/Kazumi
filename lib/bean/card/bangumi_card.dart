@@ -19,6 +19,8 @@ class BangumiCardV extends StatelessWidget {
     this.focusNode,
     this.onPressed,
     this.onKeyEvent,
+    this.onFocusChange,
+    this.ensureVisibleOnFocus = true,
   });
 
   final BangumiItem bangumiItem;
@@ -29,6 +31,8 @@ class BangumiCardV extends StatelessWidget {
   final FocusNode? focusNode;
   final VoidCallback? onPressed;
   final FocusOnKeyEventCallback? onKeyEvent;
+  final ValueChanged<bool>? onFocusChange;
+  final bool ensureVisibleOnFocus;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +104,8 @@ class BangumiCardV extends StatelessWidget {
       focusScale: channelNumber != null ? 1 : 1.035,
       onPressed: openBangumi,
       onKeyEvent: onKeyEvent,
+      onFocusChange: onFocusChange,
+      ensureVisibleOnFocus: ensureVisibleOnFocus,
       focusNode: focusNode,
       highlighted: highlighted,
       child: card,

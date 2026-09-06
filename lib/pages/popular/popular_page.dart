@@ -38,6 +38,9 @@ class _PopularPageState extends State<PopularPage> {
   static const _channelInputDelay = Duration(milliseconds: 1800);
   static const _channelLookupTimeout = Duration(seconds: 10);
   static const _channelLookupPageLimit = 5;
+  static const _tvToolbarHeight = 88.0;
+  static const _gridPadding = 8.0;
+  static const _loadingIndicatorHeight = 4.0;
 
   late final ScrollController scrollController;
   PopularController get popularController => widget.controller;
@@ -54,6 +57,8 @@ class _PopularPageState extends State<PopularPage> {
   bool _channelSearching = false;
   bool _channelLookupFailed = false;
   bool _channelLookupLimited = false;
+  int _gridFocusRequest = 0;
+  int? _pendingGridChannel;
 
   @override
   void initState() {
@@ -71,6 +76,7 @@ class _PopularPageState extends State<PopularPage> {
 
   @override
   void dispose() {
+    _gridFocusRequest++;
     scrollController.removeListener(scrollListener);
     tvChannelInputController.removeListener(_handleChannelDigit);
     TvNavigation.homeRequests.removeListener(_focusHome);
@@ -103,6 +109,7 @@ class _PopularPageState extends State<PopularPage> {
 
   void _focusHome() {
     if (!mounted || !TvMode.enabled) return;
+    _cancelGridFocusRequest();
     _tagSelectionTimer?.cancel();
     if (scrollController.hasClients) scrollController.jumpTo(0);
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -118,6 +125,10 @@ class _PopularPageState extends State<PopularPage> {
         (event is! KeyDownEvent && event is! KeyRepeatEvent)) {
       return KeyEventResult.ignored;
     }
+    // Repeats and quick reversals advance from the last requested cell, even
+    // while its row is still scrolling into view. New input owns the request.
+    final currentIndex = (_pendingGridChannel ?? (index + 1)) - 1;
+    _cancelGridFocusRequest();
     final direction = switch (event.logicalKey) {
       LogicalKeyboardKey.arrowLeft => TraversalDirection.left,
       LogicalKeyboardKey.arrowRight => TraversalDirection.right,
@@ -126,24 +137,61 @@ class _PopularPageState extends State<PopularPage> {
       _ => null,
     };
     if (direction == null) return KeyEventResult.ignored;
-    if (direction == TraversalDirection.left && index % columns == 0) {
+    if (direction == TraversalDirection.left && currentIndex % columns == 0) {
       Actions.maybeInvoke(context, const TvFocusRailIntent());
       return KeyEventResult.handled;
     }
-    if (direction == TraversalDirection.up && index < columns) {
+    if (direction == TraversalDirection.up && currentIndex < columns) {
       _focusNodeForTag(popularController.currentTag).requestFocus();
       return KeyEventResult.handled;
     }
-    final target = tvGridTarget(index, count, columns, direction) + 1;
-    final node = _focusNodeForChannel(target);
-    if (node.context != null) {
-      node.requestFocus();
-    } else {
-      unawaited(_scrollToChannel(target).then((_) {
-        if (mounted && node.context != null) node.requestFocus();
-      }));
-    }
+    final target = tvGridTarget(currentIndex, count, columns, direction) + 1;
+    unawaited(_focusGridChannel(target));
     return KeyEventResult.handled;
+  }
+
+  void _cancelGridFocusRequest() {
+    _gridFocusRequest++;
+    if (_pendingGridChannel != null && scrollController.hasClients) {
+      scrollController.jumpTo(scrollController.offset);
+    }
+    _pendingGridChannel = null;
+  }
+
+  Future<void> _focusGridChannel(int channelNumber) async {
+    final request = _gridFocusRequest;
+    final origin = FocusManager.instance.primaryFocus;
+    final originScope = origin?.enclosingScope;
+    _pendingGridChannel = channelNumber;
+    // A cached/kept-alive FocusNode can have a context outside the viewport.
+    // Reveal by grid geometry first, in either direction, then transfer focus.
+    await _scrollToChannel(channelNumber, revealOnly: true);
+    if (!mounted || request != _gridFocusRequest) return;
+    _pendingGridChannel = null;
+    // Large jumps can evict the old card and leave a fallback focus in this
+    // scope. That is not a user's move to another control or covered route.
+    if ((FocusManager.instance.primaryFocus != origin &&
+            origin?.parent != null) ||
+        originScope?.hasFocus != true) {
+      return;
+    }
+    final node = _focusNodeForChannel(channelNumber);
+    if (node.context != null) node.requestFocus();
+  }
+
+  void _onChannelFocusChanged(int channelNumber, bool focused) {
+    if (!focused || _pendingGridChannel != null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted ||
+          _pendingGridChannel != null ||
+          _channelFocusNodes[channelNumber]?.hasPrimaryFocus != true) {
+        return;
+      }
+      // Also cover focus restored by the rail or a popped detail route. During
+      // a requested scroll, recycled-card fallback focus must not scroll us.
+      _cancelGridFocusRequest();
+      unawaited(_focusGridChannel(channelNumber));
+    });
   }
 
   List<BangumiItem> get _visibleBangumiList =>
@@ -166,6 +214,7 @@ class _PopularPageState extends State<PopularPage> {
   void _handleChannelDigit() {
     final event = tvChannelInputController.value;
     if (!mounted || !TvMode.enabled) return;
+    _cancelGridFocusRequest();
     if (event == null) {
       if (_channelInput.isNotEmpty || _channelSearching) {
         _clearChannelInput(notifyController: false);
@@ -324,6 +373,7 @@ class _PopularPageState extends State<PopularPage> {
   }
 
   void _openChannel(BangumiItem item) {
+    _cancelGridFocusRequest();
     _clearChannelInput();
     context.pushNamed('/info/', arguments: item);
   }
@@ -344,18 +394,33 @@ class _PopularPageState extends State<PopularPage> {
       MediaQuery.sizeOf(context).width / crossCount / 0.65 +
       MediaQuery.textScalerOf(context).scale(32.0);
 
-  Future<void> _scrollToChannel(int channelNumber) async {
+  Future<void> _scrollToChannel(int channelNumber,
+      {bool revealOnly = false}) async {
     if (!scrollController.hasClients) return;
     final crossCount = _gridCrossCount();
     final row = (channelNumber - 1) ~/ crossCount;
-    final target =
-        (row * (_gridItemExtent(crossCount) + StyleString.cardSpace - 2))
-            .clamp(0.0, scrollController.position.maxScrollExtent);
-    await scrollController.animateTo(
-      target,
-      duration: const Duration(milliseconds: 260),
-      curve: Curves.easeOutCubic,
-    );
+    final extent = _gridItemExtent(crossCount);
+    final rowOffset = row * (extent + StyleString.cardSpace - 2);
+    final position = scrollController.position;
+    var target = rowOffset;
+    if (revealOnly && TvMode.enabled) {
+      final header = _tvToolbarHeight + MediaQuery.paddingOf(context).top;
+      final top = header + _loadingIndicatorHeight + _gridPadding + rowOffset;
+      final start = top - header - _gridPadding;
+      final end = top + extent + _gridPadding - position.viewportDimension;
+      // Keep an already visible row stationary. For oversized cards prefer
+      // their top below the pinned categories rather than oscillating edges.
+      target =
+          end > start ? start : position.pixels.clamp(end, start).toDouble();
+    }
+    target = target.clamp(0.0, position.maxScrollExtent);
+    if ((target - position.pixels).abs() > 0.5) {
+      await scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
+    }
     if (!mounted) return;
     await WidgetsBinding.instance.endOfFrame;
   }
@@ -381,6 +446,7 @@ class _PopularPageState extends State<PopularPage> {
   }
 
   Future<void> _selectTag(String tag) async {
+    _cancelGridFocusRequest();
     _tagSelectionTimer?.cancel();
     if (tag == popularController.currentTag) return;
     tvChannelInputController.cancel();
@@ -417,8 +483,9 @@ class _PopularPageState extends State<PopularPage> {
                     opacity: popularController.isLoadingMore ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 300),
                     child: popularController.isLoadingMore
-                        ? const LinearProgressIndicator(minHeight: 4)
-                        : const SizedBox(height: 4),
+                        ? const LinearProgressIndicator(
+                            minHeight: _loadingIndicatorHeight)
+                        : const SizedBox(height: _loadingIndicatorHeight),
                   ),
                 ),
               ),
@@ -470,7 +537,7 @@ class _PopularPageState extends State<PopularPage> {
   Widget contentGrid(List<BangumiItem> bangumiList) {
     final crossCount = _gridCrossCount();
     return SliverPadding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(_gridPadding),
       sliver: SliverGrid(
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           // 行间距
@@ -494,6 +561,11 @@ class _PopularPageState extends State<PopularPage> {
                         : null,
                     onKeyEvent: (_, event) => _handleGridKey(
                         index, bangumiList.length, crossCount, event),
+                    ensureVisibleOnFocus: !TvMode.enabled,
+                    onFocusChange: TvMode.enabled
+                        ? (focused) =>
+                            _onChannelFocusChanged(channelNumber, focused)
+                        : null,
                     onPressed: TvMode.enabled
                         ? () => _openChannel(bangumiList[index])
                         : null,
@@ -563,7 +635,7 @@ class _PopularPageState extends State<PopularPage> {
     if (TvMode.enabled) {
       return SliverAppBar(
         pinned: true,
-        toolbarHeight: 88,
+        toolbarHeight: _tvToolbarHeight,
         elevation: 0,
         titleSpacing: 20,
         backgroundColor: theme.colorScheme.surface,

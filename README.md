@@ -7,11 +7,11 @@
 这是基于 [Predidit/Kazumi](https://github.com/Predidit/Kazumi) 的**非官方开源 TV fork**，
 不是上游官方电视版。源码沿用 GPL-3.0；本仓库当前发布和测试的重点是独立 TV APK。
 
-**当前为 Preview 3 公开测试阶段，不是稳定版。** 手机与电视的接力播放尚未实现。
+**当前为 Preview 4 公开测试阶段，不是稳定版。** 手机与电视的接力播放尚未实现。
 以下状态更新于 **2026-09-06**；“已发布”“已知问题”和“后续计划”分别列出，
 后续计划不代表下载的 APK 已包含相应修复。
 
-[下载 Preview 3](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.3) ·
+[下载 Preview 4](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.4) ·
 [反馈问题](https://github.com/znbsf/Kazumi/issues) ·
 [UI 改进计划](#ui-plan) ·
 [阶段路线图](docs/TV_ROADMAP.md)
@@ -20,21 +20,21 @@
 
 请到**本 fork 的发行页**下载，不要将上游手机版、其他平台安装包或 GitHub 自动生成的源码压缩包当作 TV APK。
 
-| 项目 | Preview 3 |
+| 项目 | Preview 4 |
 | --- | --- |
-| 发行标签 | [`v2.3.0-tv-preview.3`](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.3)（Pre-release） |
-| APK | [Kazumi-TV-2.3.0-tv-preview.3-universal.apk](https://github.com/znbsf/Kazumi/releases/download/v2.3.0-tv-preview.3/Kazumi-TV-2.3.0-tv-preview.3-universal.apk)，约 66.9 MiB |
-| 应用版本 | `2.3.0-tv-device-test` / versionCode `203026`；沿用真机验证包，仅重命名发行文件 |
+| 发行标签 | [`v2.3.0-tv-preview.4`](https://github.com/znbsf/Kazumi/releases/tag/v2.3.0-tv-preview.4)（Pre-release） |
+| APK | [Kazumi-TV-2.3.0-tv-preview.4-universal.apk](https://github.com/znbsf/Kazumi/releases/download/v2.3.0-tv-preview.4/Kazumi-TV-2.3.0-tv-preview.4-universal.apk)，约 66.9 MiB |
+| 应用版本 | `2.3.0-ui14-test` / versionCode `203028`；沿用 AVD / 真机验证包，仅重命名发行文件 |
 | 独立包名 | `com.znbsf.kazumi.tv`，可与原手机版共存 |
 | 架构 | `armeabi-v7a`、`arm64-v8a`、`x86_64` |
 | 系统要求 | Manifest 最低 Android 7.0 / API 24；不代表所有 Android 7+ 设备已通过测试 |
 | 弹幕 | **不包含合成示例，也未配置在线弹幕凭证**；不要将没有弹幕误认为加载成功 |
-| 签名与升级 | 沿用测试签名，可从此前公开 TV 预览包覆盖升级；已安装同哈希 203026 测试包，无需重复安装 |
+| 签名与升级 | 沿用测试签名，可从此前公开 TV 预览包覆盖升级；已安装同哈希 203028 测试包，无需重复安装 |
 
 APK SHA-256：
 
 ```text
-e26e329196a6e485683c5ce78118c5f9b3cb0e66f23b739ddaaa378d5202b690
+1c7ab1384019c72591171f83e50246d5d29e2749a84c2c2424e4064ba6964eb5
 ```
 
 安装 APK 后，从电视应用列表打开 **Kazumi TV**，按提示完成初始化与规则安装，
@@ -43,10 +43,11 @@ e26e329196a6e485683c5ce78118c5f9b3cb0e66f23b739ddaaa378d5202b690
 **桌面发现：**203026 为 TV 增加普通 LAUNCHER 兼容入口，
 保留 Leanback 入口；已在小米电视“我的应用”看到 Kazumi TV，并用方向键 / OK 从桌面启动。
 两种入口指向同一 TV Activity，不会安装两个 App，见[真机安装记录](docs/TV_DEVICE_203026.md)。
+203028 保留这两种入口，安装后已重新查询确认；本轮没有重复桌面点图标测试。
 
 本 fork 的“检查更新”指向自己的 Releases；目前没有预览版后台自动下载安装。
-发行页的 `SHA256SUMS.txt` 用于校验；Preview 3 不附带旧版的 `tv_preview.json`。
-完整安装、升级与版本说明见 [Preview 3 说明](docs/TV_PREVIEW_3.md)。
+发行页的 `SHA256SUMS.txt` 用于校验；Preview 4 不附带旧版的 `tv_preview.json`。
+完整安装、升级与版本说明见 [Preview 4 说明](docs/TV_PREVIEW_4.md)。
 
 ## 已发布的 TV 适配
 
@@ -56,7 +57,7 @@ e26e329196a6e485683c5ce78118c5f9b3cb0e66f23b739ddaaa378d5202b690
 | 范围 | 当前实现与边界 |
 | --- | --- |
 | 独立电视应用 | `tv` / `mobile` 分别构建；TV 使用独立包名、Leanback / 普通桌面入口、横屏与 TV banner，不要求触摸屏 |
-| 首页 | 横向分类，焦点突出并联动下方内容；节目按从左到右、从上到下编号；首列左键显式回侧栏，右键恢复内容焦点 |
+| 首页 | 横向分类，焦点突出并联动下方内容；LCN 海报上下双向自动显露，避开固定分类栏；首列左键回侧栏，右键恢复内容焦点 |
 | 数字直达 | 1–999 节目号、匹配高亮、自动滚动、多位输入等待与有界查找；编号属于当前分类，不是永久频道号 |
 | 侧栏与设置 | 常驻历史入口；遥控器快捷入口通往 TV 操作设置，固定键表与通用按键设置集中展示 |
 | 详情页 | 播放、追番、吐槽移到标题下、海报右侧；默认聚焦播放；Play / PlayPause 优先续播历史，没有可用历史才选源 |
@@ -66,29 +67,31 @@ e26e329196a6e485683c5ce78118c5f9b3cb0e66f23b739ddaaa378d5202b690
 | 播放诊断 | INFO 展示实际解码 / 输出路径、编码、帧率、缓存及丢帧，而非只展示“已开启硬解”设置 |
 | TV 默认值 | 低内存模式、较小缓存预算、较长控制栏等待、减少触摸手势及动画；已有用户设置优先，不在升级时强制覆盖 |
 
-Preview 3 相比 Preview 2，重点修复首页 / 历史焦点、搜索输入、选集状态区分与标题溢出，
-并补齐厂商电视桌面入口；保留已有详情操作、透明面板和遥控快捷键。
-[逐项更新与验证范围](docs/TV_PREVIEW_3.md)不包含下方尚待实施的 UI 改进。
+Preview 4 相比 Preview 3，重点修复 **首页下滚后向上不回滚（UI-14）**，
+统一首页滚动与焦点控制，并取消过期请求，覆盖快速反向、长距离循环、侧栏 / 详情返回。
+不更换配色、卡片尺寸、分类入口或播放内核；保留 Preview 3 的搜索、历史、选集及桌面入口修复。
+[本次更新与验证范围](docs/TV_PREVIEW_4.md)不包含下方尚待实施的 UI 改进。
 
 ### 实际验证到哪里
 
-- **MiTV-ASTP0 / Android 9 / armv7：**203026 包保留数据覆盖安装，安装后 APK 哈希一致；
-  从小米“我的应用”启动、首页回侧栏、历史首卡真实续播出画、浅色选集状态 / 焦点区分与 OK 唤醒已做短程验证。
-- **Google TV API 36 / x86_64 模拟器：**开发构建验证搜索 OK / 原生返回、历史操作和焦点恢复；
-  本地媒体实际播放器验证选集布局与导航。在线请求超时，不能当作在线检索成功；不是 203026 APK 的全流程重测。
-- 本次发布前重新执行 **250 项 Flutter 测试，全部通过**；修改的 Dart 文件静态分析通过。
+- **MiTV-ASTP0 / Android 9 / armv7：**203026 → 203028 保留数据覆盖安装，拉回 APK 哈希一致；
+  确认 19 → 55 → 49 → 1、侧栏 / 真实详情返回、快速反向和 ADB 长按。初始焦点疑点单列，未将它记作通过。
+- **Google TV API 36 / x86_64 模拟器：**正常 203028 包验证在线分页、55 → 49 → 1 及真实详情返回；
+  独立离线包另测 120 条长列表、末行回首行和长按，样例没有进入正常发行包。
+- 本次发布前重新执行 **264 项 Flutter 测试，全部通过**（含 14 项新增首页专项）；修改的 Dart 文件静态分析通过。
   早期测试轮次曾遇到 AsyncRateLimiter 计时偶发失败，未修改该限流器，也不宣称消除了此测试风险。
 - 真机使用 ADB 注入键码，不等于实体遥控器全部硬件键和长按已通过。
   **没有全机型、全部来源、4K/HDR、长期音画同步 / 内存稳定性或在线弹幕端到端的验收结论。**
 
-完整步骤见 [203026 真机记录](docs/TV_DEVICE_203026.md)、[本地播放器集成](docs/TV_PLAYER_LOCAL_INTEGRATION.md)
-及[历史焦点回归](docs/TV_FOCUS_REGRESSION.md)。
+本次步骤与截图见[首页滚动回归记录](docs/TV_HOME_SCROLL_REGRESSION.md)。
+既有播放器出画、选集状态区分与桌面点图标的证据来自 [203026 真机记录](docs/TV_DEVICE_203026.md)，
+不是 203028 重新播放验证；历史资料另见[本地播放器集成](docs/TV_PLAYER_LOCAL_INTEGRATION.md)及[焦点回归](docs/TV_FOCUS_REGRESSION.md)。
 其他平台的代码仍继承自上游，但不代表本 fork 提供对应发行包或兼容性承诺；
 本轮也未新增手机版 APK。
 
 ## 当前已知问题
 
-以下针对 **Preview 3 / 203026**。UI-01～UI-04 的代码修复已包含在此版本，
+以下针对 **Preview 4 / 203028**。UI-01～UI-04 与 UI-14 的代码修复已包含在此版本，
 不代表搜索、历史和所有焦点路径都完成了真实电视端到端验收。
 
 1. **暂停 seek 后可能丢失新进度（UI-13）：**本地实际播放器暂停后跳到新位置，退出再续播仍恢复旧记录；
@@ -99,12 +102,16 @@ Preview 3 相比 Preview 2，重点修复首页 / 历史焦点、搜索输入、
 4. **实体遥控器长返回尚待验证：**可见主页按钮已有真机验证，但厂商可能提前拦截系统键。
 5. **首次启动更新渠道文案仍有上游残留（UI-12）：**F-Droid 选项不代表该渠道提供本 fork；请使用本仓库 Releases。
 6. **当前公开包没有在线弹幕凭证，也不包含演示弹幕。**在线弹幕端到端未验收，见下方说明。
+7. **冷启动初始焦点仍有疑点：**真机首次启动后的首个 RIGHT 未见海报焦点框，首轮脚本落点与预设不符；
+   尚未定位，不认定为已修复。确认起点后，UI-14 的双向回滚、侧栏 / 详情返回已通过，
+   见[首页滚动回归记录](docs/TV_HOME_SCROLL_REGRESSION.md)。Bangumi 网络时好时坏的根因也未关闭。
 
 <a id="ui-plan"></a>
 
 ## UI 审查与下一轮计划
 
 UI-01～UI-04 的焦点改动已随 **Preview 3 发布**；验证范围按下表区分。UI-05～UI-13 仍待实施，续播边界另见 UI-13。
+UI-14 为 Preview 3 发布后发现的首页双向滚动缺陷，已随 **Preview 4 发布**；初始焦点与硬件遥控边界仍保留。
 P0 优先保障可操作性；P1 优化常用路径；P2 补齐边界。
 保持原有风格，先统一焦点规则，不重新设计整套主题，也不借 UI 调整更换播放内核。
 
@@ -123,12 +130,13 @@ P0 优先保障可操作性；P1 优化常用路径；P2 补齐边界。
 | UI-11 / P2 | 体验改进建议 | 分类横向溢出与 LCN 所属范围不够明确 | 加边缘 / 位置提示；数字浮层说明当前分类；保留已有超时、页数上限与取消机制 |
 | UI-12 / P2 | 待系统回归 | 设置及次级页面不能仅凭大屏布局认定完成 | 设置已有横向双栏，不再重复建设；逐项查左右栏、滑块、下拉框、输入框和返回恢复，并覆盖时间表、追番、下载等页面 |
 | UI-13 / P1 | 本地实际播放器已复现；未修 | 暂停 seek 后退出没有保存新进度 | 覆盖暂停 seek、退出、切集和后台的最终进度提交，加载失败不得覆盖有效历史；详见本地集成记录 |
+| UI-14 / P0 | Preview 4 已修；14 项专项 + AVD + MiTV / Android 9 短程 | 首页向上不回滚，焦点落到不可见海报；长距离循环有回收焦点干扰 | 正常 203028 已装真机，验证 55 → 49 → 1、侧栏 / 详情返回、快速反向及 ADB 长按；初始焦点疑点、实体遥控器硬件与真机末尾循环仍待复核，见专项记录 |
 
 UI-12 还需整理首次启动的更新来源：当前 TV fork 仍显示上游 F-Droid 选项与说明，避免误导安装渠道。
 
 实施顺序：
 
-1. **操作可靠性：**UI-01～UI-04 已发布，继续收集设备反馈；优先补 UI-13 进度保存和 UI-10 错误反馈，不把已知失败藏在体验优化之后。
+1. **操作可靠性：**UI-01～UI-04、UI-14 已发布，初始焦点疑点需复核；继续处理 UI-13 进度保存和 UI-10 错误反馈，不把已知失败藏在体验优化之后。
 2. **常用路径：**优先侧栏文字与续播提示，再调整播放器 / 选集入口、选源双栏及错误反馈。
 3. **边界收口：**空列表、加载失败、超长标题、大字体、720p / 1080p 布局、不满一行的网格及焦点恢复。
 
@@ -139,21 +147,26 @@ UI-12 还需整理首次启动的更新来源：当前 TV fork 仍显示上游 F
 
 ### 两个大阶段
 
-- **第一阶段：独立 TV 版。**已发布 Preview 3，仍需完成上述导航、来源兼容和设备验收，不能等同于稳定版完成。
+- **第一阶段：独立 TV 版。**已发布 Preview 4，仍需完成上述导航、来源兼容和设备验收，不能等同于稳定版完成。
 - **第二阶段：手机与 TV 联动。**手机选择投屏 / 接力后，让电视 App 使用对应节目、来源、集数和时间点继续播放；
   设备发现、配对、状态反馈与异常处理均待设计。上游已有的 DLNA / 同步相关代码不等于这套接力能力已经完成。
 - **后续探索：日本实际播出台标角标。**需要可靠的节目与电视台映射，以及台标资源使用边界；当前只有节目编号，没有台标。
 
 详细阶段台账与历史记录见 [TV 路线图](docs/TV_ROADMAP.md)。
 
-## Preview 3 实际截图
+## 实际截图
 
-以下为 **203026 实体电视截图**，不是设计稿。选集图正在播放第 9 集，遥控焦点位于第 6 集。
+以下为 **Preview 4 / 203028 实体 MiTV 截图**，保留用户的浅色主题。
+下滚到 55 后按 UP，49 号会完整回到分类栏下方，不再让焦点藏出画面。
+
+![Preview 4 真机：下滚到 55 号](docs/screenshots/ui14/mitv-normal-down-55.png)
+
+![Preview 4 真机：按上后 49 号随列表回滚](docs/screenshots/ui14/mitv-normal-up-49.png)
+
+以下播放器图片保留自 **Preview 3 / 203026**，不是本轮播放重测。
+选集图正在播放第 9 集，遥控焦点位于第 6 集。
 
 <table>
-  <tr>
-    <td><img alt="Preview 3：从电视桌面打开的横向分类与 LCN 首页" src="static/screenshot/tv_preview3_home.png"></td>
-  </tr>
   <tr>
     <td><img alt="Preview 3：透明选集，第 9 集在播，第 6 集聚焦" src="static/screenshot/tv_preview3_episodes.png"></td>
   </tr>
@@ -202,9 +215,9 @@ TV 自动视频输出采用 `mediacodec_embed` 直连 Surface，保留用户显�
 直连路径不兼容 Anime4K 超分辨率及部分视频滤镜，不把“实时超分”作为本 TV 包的默认能力。
 短程出画、模拟器通过与长期音画 / 4K / HDR 验收是不同结论。
 
-### Preview 3 没有内置弹幕凭证或示例
+### Preview 4 没有内置弹幕凭证或示例
 
-Preview 3 发布的是正常入口的 203026 真机包，没有注入在线弹幕 API 的 AppID / Key，
+Preview 4 发布的是正常入口的 203028 真机包，没有注入在线弹幕 API 的 AppID / Key，
 也没有启用合成示例开关。**这版无演示弹幕不是弹弹 Play 服务故障的结论**，在线端到端仍未验证。
 
 历史 Preview 2 曾显式嵌入带 **[本地示例]** 标识的合成弹幕，仅用于 UI / 同步测试；
@@ -231,10 +244,10 @@ flutter pub get
 flutter run --flavor tv -d <TV模拟器ID>
 
 # 普通 TV Release，不嵌入本地示例
-flutter build apk --release --flavor tv --build-name 2.3.0-tv-device-test --build-number 203026
+flutter build apk --release --flavor tv --target lib/main.dart --build-name 2.3.0-ui14-test --build-number 203028
 
-# 可选的本地弹幕演示构建（不是 Preview 3 的构建配方）
-./scripts/build-tv-preview.ps1 -Flutter flutter -BuildNumber 203027
+# 可选的本地弹幕演示构建（不是 Preview 4 的构建配方）
+./scripts/build-tv-preview.ps1 -Flutter flutter -BuildNumber 203029
 
 # 仅在需要回归手机版时构建
 flutter build apk --debug --flavor mobile
@@ -244,8 +257,8 @@ flutter test
 flutter analyze --no-fatal-infos --fatal-warnings
 ```
 
-`203026` 对应当前预览版本；下一次发布应用改动时应递增 build number。
-演示命令中的 `203027` 只是本地示例，未作为公开版本发布。
+`203028` 对应当前预览版本；下一次发布应用改动时应递增 build number。
+演示命令中的 `203029` 只是本地示例，未作为公开版本发布；自行测试应选择高于当前安装包的编号。
 本地构建输出见 `build/app/outputs/flutter-apk/` 与 `build/app/outputs/apk/tv/`，
 Gradle 命名包含 `Kazumi-TV`；发行页的 Preview 文件名由发布环节明确命名。
 
@@ -262,7 +275,9 @@ Gradle 命名包含 `Kazumi-TV`；发行页的 Preview 文件名由发布环节�
 不要公开账号、Cookie、验证码答案、API Key、鉴权链接或未脱敏原始日志。
 App 会访问选定的来源及元数据等外部服务；不能把开源或本地历史存储理解为完全离线运行。
 
-- [Preview 3 安装、更新和测试边界](docs/TV_PREVIEW_3.md)
+- [Preview 4 安装、更新和测试边界](docs/TV_PREVIEW_4.md)
+- [首页双向滚动回归与 203028 真机记录](docs/TV_HOME_SCROLL_REGRESSION.md)
+- [Preview 3 历史发行说明](docs/TV_PREVIEW_3.md)
 - [203026 真机安装与桌面入口记录](docs/TV_DEVICE_203026.md)
 - [实际播放器本地集成及未关闭问题](docs/TV_PLAYER_LOCAL_INTEGRATION.md)
 - [Preview 2 历史发行说明](docs/TV_PREVIEW_2.md)
