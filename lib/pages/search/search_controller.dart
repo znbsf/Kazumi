@@ -113,6 +113,7 @@ abstract class _SearchPageController with Store {
       // Discard stale responses before mutating the current search.
       if (generation != _searchGeneration) return;
       if (page == null) {
+        isTimeOut = true;
         break;
       }
       pagesFetched++;
@@ -127,8 +128,6 @@ abstract class _SearchPageController with Store {
       }
     } while (hasMoreSearchResults && pagesFetched < _maxPagesPerSearch);
     isLoading = false;
-    isTimeOut =
-        bangumiList.isEmpty && (pagesFetched == 0 || !hasMoreSearchResults);
   }
 
   @action

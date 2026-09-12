@@ -16,6 +16,10 @@ class DanmakuClient {
     Map<String, dynamic> headers = const {},
     CancelToken? cancelToken,
   }) async {
+    // An open-source/local build cannot inherit the upstream repository's
+    // private API secret. Fail before the network request instead of sending
+    // an empty signature and misreporting the resulting 403 as a server error.
+    ensureDandanCredentials();
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final uri = Uri.parse(url);
     final requestHeaders = <String, dynamic>{

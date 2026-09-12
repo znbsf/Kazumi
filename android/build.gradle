@@ -13,6 +13,20 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
+// AGP 8.11 does not always infer the Kotlin-to-JAR task edge for older Flutter
+// plugins. Keep clean CI builds deterministic by compiling a plugin's Kotlin
+// sources before its compile classpath JAR is assembled.
+subprojects { subproject ->
+    subproject.tasks.configureEach { task ->
+        if (task.name.startsWith('bundleLibCompileToJar')) {
+            def variant = task.name - 'bundleLibCompileToJar'
+            task.dependsOn(subproject.tasks.matching {
+                it.name == "compile${variant}Kotlin"
+            })
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }

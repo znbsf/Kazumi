@@ -194,7 +194,10 @@ flutter:
     - assets/images/
     - assets/plugins/
     - assets/shaders/
-    - assets/images/logo/
+    # Android uses native launcher resources; these are desktop tray/iOS assets.
+    # The TV release must not bundle the separately licensed upstream artwork.
+    - path: assets/images/logo/
+      platforms: [windows, macos, linux, ios]
     - assets/statements/
   fonts:
     - family: MI_Sans_Regular

@@ -1,0 +1,12 @@
+{
+  "description": "Synthetic local TV preview comments, not comments fetched for the current episode. This build has no DANDANAPI_APPID and DANDANAPI_KEY. This is not evidence of an upstream service outage.",
+  "danDanBangumiID": 0,
+  "danmakus": [
+    {"m":"[本地示例] TV 遥控器与弹幕同步测试，不是本集在线弹幕","p":"2,1,16777215,LocalPreview"},
+    {"m":"[本地示例] 本测试包未配置在线弹幕 API 凭证","p":"12,1,16777120,LocalPreview"},
+    {"m":"[本地示例] 在线请求需要 AppID 和签名 Key，仅 AppID 不够","p":"22,1,16777215,LocalPreview"},
+    {"m":"[本地示例] 未配置凭证不代表弹弹 Play 服务故障","p":"32,5,10092543,LocalPreview"},
+    {"m":"[本地示例] CC／红键可开关弹幕；设置可关闭本地示例","p":"42,1,16777215,LocalPreview"},
+    {"m":"[本地示例] OK 唤醒播放按钮，上键定位选集；欢迎反馈电视型号","p":"52,1,16777215,LocalPreview"}
+  ]
+}

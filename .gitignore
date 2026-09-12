@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+# Local device captures and diagnostic logs may contain session data.
+/artifacts/
 
 # Symbolication related
 app.*.symbols
