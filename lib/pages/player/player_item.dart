@@ -1575,7 +1575,7 @@ class _PlayerItemState extends State<PlayerItem>
                       onNavigationKey: _handleVisibleTvNavigationKey,
                       isBlocked: () =>
                           _openPlayerMenuCount > 0 ||
-                          videoPageController.showTabBody,
+                          (TvMode.enabled && videoPageController.showTabBody),
                     ),
                     Center(
                       key: _videoSurfaceKey,
