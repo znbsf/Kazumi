@@ -2,7 +2,8 @@
 
 2026-09-12，A 线独立工作树 `4b4d/Kazumi`，私有候选分支
 `codex/tv-phase1-hardening`。起点 `95a629f9bcccc5c898412ac712b14a68132af1f1`，
-不含 P2。本文是进行中的记录，不代表 UI 或 rebase 已验收。
+不含 P2。本文保留过程记录；其中“待做”“尚未 rebase”是阶段快照。
+本轮最终结果、当前 SHA、覆盖边界及交付物以 [TV_PHASE1_DELIVERY.md](TV_PHASE1_DELIVERY.md) 为准。
 
 ## 当前基线
 
