@@ -14,6 +14,11 @@ abstract class _PopularController with Store {
   int _trendOffset = 0;
   int _tagQueryGeneration = 0;
   int _activeLoadingRequests = 0;
+  // Small session cache of metadata only; images keep their own cache.
+  final _tagCache = <(bool, String), (DateTime, List<BangumiItem>)>{};
+  static const _tagCacheLifetime = Duration(minutes: 10);
+  static const _maxCachedTags = 8;
+  static const _maxCachedItems = 240;
 
   @observable
   String currentTag = '';
@@ -48,6 +53,7 @@ abstract class _PopularController with Store {
   }
 
   void setCurrentTag(String s) {
+    if (s != currentTag) _tagQueryGeneration += 1;
     currentTag = s;
   }
 
@@ -87,8 +93,17 @@ abstract class _PopularController with Store {
 
   @action
   Future<void> queryBangumiByTag({String type = 'add'}) async {
+    final cacheKey = (_bangumiMirrorEnabled, currentTag);
     if (type == 'init') {
       _tagQueryGeneration += 1;
+      final cached = _tagCache.remove(cacheKey);
+      if (cached != null &&
+          DateTime.now().difference(cached.$1) < _tagCacheLifetime) {
+        _tagCache[cacheKey] = cached;
+        bangumiList = ObservableList.of(cached.$2);
+        isTimeOut = false;
+        return;
+      }
       bangumiList.clear();
     }
     final requestGeneration = _tagQueryGeneration;
@@ -109,6 +124,16 @@ abstract class _PopularController with Store {
       }
       bangumiList.addAll(result);
       isTimeOut = bangumiList.isEmpty;
+      if (bangumiList.isNotEmpty) {
+        _tagCache.remove(cacheKey);
+        _tagCache[cacheKey] = (
+          DateTime.now(),
+          bangumiList.take(_maxCachedItems).toList(growable: false),
+        );
+        while (_tagCache.length > _maxCachedTags) {
+          _tagCache.remove(_tagCache.keys.first);
+        }
+      }
     } finally {
       _endLoading();
     }

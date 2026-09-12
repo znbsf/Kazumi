@@ -24,6 +24,14 @@
 当前电视包为 `physical-tv-a-ui-test3.apk`（`2.3.1-a-ui-test3 / 203061`），
 覆盖安装并确认界面；保留导航底色、分类滚动和半透明角标修复。
 
+再追加最小分类缓存：`PopularController` 保留最近8个分类，每类最多240条，10分钟有效，
+仅内存、镜像/原站分键，图片仍独立缓存。复用列表和分页，空/失败结果不缓存，
+切换分类使旧请求失效。顶部分类名称本来就是本地常量。本轮新增3项缓存测试通过，
+首页16项回归通过，相关分析无问题。真机“恋爱→悬疑→恋爱”只新增悬疑请求，
+证据 `cache-requests-before.txt` / `cache-requests-after.txt`。
+最新安装包 `physical-tv-a-cache-test.apk`（`2.3.1-a-cache-test / 203071`），
+取代上一测试包；未添加闪存持久化，控制器销毁后缓存消失。
+
 代码冻结于 `25440c29307f7a09b06e6b93ea688ba3ebd21f91`，私有分支
 `codex/tv-phase1-hardening`。已 rebase 到执行时及交付前重新查询均为
 `2624e0c0f4a0be2be658f833a510090cde8b5cf5` 的 upstream/main。
