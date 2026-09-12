@@ -638,19 +638,20 @@ class _PopularPageState extends State<PopularPage> {
         toolbarHeight: _tvToolbarHeight,
         elevation: 0,
         titleSpacing: 20,
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.colorScheme.surfaceContainerHigh,
+        surfaceTintColor: Colors.transparent,
         actions: buildActions(),
         title: Observer(
           builder: (_) => SizedBox(
             height: 70,
-            child: ListView(
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              children: [
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              child: Row(children: [
                 _buildTvCategoryTab('', 0),
                 for (var index = 0; index < defaultAnimeTags.length; index++)
                   _buildTvCategoryTab(defaultAnimeTags[index], index + 1),
-              ],
+              ]),
             ),
           ),
         ),
@@ -729,6 +730,7 @@ class _PopularPageState extends State<PopularPage> {
       padding: const EdgeInsets.only(right: 10),
       child: TvFocusableSurface(
         focusNode: _focusNodeForTag(tag),
+        ensureVisibleOnFocus: false,
         borderRadius: 22,
         onKeyEvent: (node, event) {
           if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
@@ -766,7 +768,18 @@ class _PopularPageState extends State<PopularPage> {
           return KeyEventResult.ignored;
         },
         onFocusChange: (focused) {
-          if (focused) _scheduleTvTagSelection(tag);
+          if (!focused) return;
+          _scheduleTvTagSelection(tag);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final node = _focusNodeForTag(tag);
+            if (!mounted || !node.hasFocus || node.context == null) return;
+            Scrollable.ensureVisible(
+              node.context!,
+              alignment: 0.5,
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOut,
+            );
+          });
         },
         onPressed: () => unawaited(_selectTag(tag)),
         child: AnimatedContainer(
@@ -775,9 +788,8 @@ class _PopularPageState extends State<PopularPage> {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 9),
           decoration: BoxDecoration(
-            color: selected
-                ? colorScheme.primaryContainer
-                : colorScheme.surfaceContainerHigh,
+            color:
+                selected ? colorScheme.primaryContainer : colorScheme.surface,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(

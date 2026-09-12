@@ -120,15 +120,14 @@ class _ChannelNumberBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Semantics(
       label: '$number 号节目',
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: colorScheme.surface.withValues(alpha: 0.88),
+          color: Colors.black.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(7),
           border: Border.all(
-            color: colorScheme.outlineVariant.withValues(alpha: 0.8),
+            color: Colors.white.withValues(alpha: 0.25),
           ),
           boxShadow: const [
             BoxShadow(color: Colors.black38, blurRadius: 4),
@@ -139,7 +138,7 @@ class _ChannelNumberBadge extends StatelessWidget {
           child: Text(
             number.toString(),
             style: TextStyle(
-              color: colorScheme.onSurface,
+              color: Colors.white,
               fontWeight: FontWeight.w800,
             ),
           ),

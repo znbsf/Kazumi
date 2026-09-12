@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:kazumi/bean/card/bangumi_card.dart';
+import 'package:kazumi/bean/widget/tv_focusable_surface.dart';
+import 'package:kazumi/services/player/low_memory_mode.dart';
 import 'package:kazumi/pages/popular/popular_page.dart';
 import 'package:kazumi/services/platform/tv_channel_input.dart';
 import 'package:kazumi/services/platform/tv_mode.dart';
@@ -84,6 +86,45 @@ void main() {
     await tester.pumpAndSettle();
     return app;
   }
+
+  testWidgets('TV categories stay fully visible in both directions and wrap',
+      (tester) async {
+    await mount(tester, size: const Size(854, 480));
+    final tabs = find.byWidgetPredicate((w) =>
+        w is TvFocusableSurface &&
+        (w.focusNode?.debugLabel?.startsWith('TV category ') ?? false));
+    final first = tester.widget<TvFocusableSurface>(tabs.first).focusNode!;
+    first.requestFocus();
+    await tester.pumpAndSettle();
+    final viewport = tester.getRect(find.byType(SingleChildScrollView).first);
+    for (final key in [
+      LogicalKeyboardKey.arrowRight,
+      LogicalKeyboardKey.arrowLeft
+    ]) {
+      for (var i = 0; i < tabs.evaluate().length + 1; i++) {
+        await _press(tester, key);
+        final focused = find.byWidgetPredicate((w) =>
+            w is TvFocusableSurface &&
+            (w.focusNode?.debugLabel?.startsWith('TV category ') ?? false) &&
+            w.focusNode!.hasPrimaryFocus);
+        expect(focused, findsOneWidget);
+        final rect = tester.getRect(focused);
+        expect(rect.left, greaterThanOrEqualTo(viewport.left + 3));
+        expect(rect.right, lessThanOrEqualTo(viewport.right - 3));
+      }
+    }
+  });
+
+  test('TV memory defaults on, preserves off; mobile retains automatic mode',
+      () async {
+    await LowMemoryMode.auto.save();
+    expect(LowMemoryMode.current, LowMemoryMode.always);
+    await LowMemoryMode.never.save();
+    expect(LowMemoryMode.current, LowMemoryMode.never);
+    TvMode.setEnabledForTesting(false);
+    await LowMemoryMode.auto.save();
+    expect(LowMemoryMode.current, LowMemoryMode.auto);
+  });
 
   for (final size in [
     const Size(854, 480),
