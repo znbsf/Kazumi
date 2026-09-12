@@ -311,6 +311,20 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
                 if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
                   if (_contentFocusScope.focusedChild != null) {
                     _contentFocusScope.requestFocus();
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted || _isCovered) return;
+                      final focus = FocusManager.instance.primaryFocus;
+                      if (focus is! FocusScopeNode ||
+                          !focus.ancestors.contains(_contentFocusScope)) return;
+                      // A newly mounted outlet can remember only an empty
+                      // route scope. Explicit RIGHT must enter a real control.
+                      final controls = _contentFocusScope.traversalDescendants
+                          .where((node) =>
+                              node is! FocusScopeNode &&
+                              node.canRequestFocus &&
+                              node.context != null);
+                      if (controls.isNotEmpty) controls.first.requestFocus();
+                    });
                     return KeyEventResult.handled;
                   }
                   _railFocusScope.directionalTraversalEdgeBehavior =

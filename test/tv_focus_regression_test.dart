@@ -111,6 +111,18 @@ void main() {
   });
 
   testWidgets(
+      'cold history RIGHT enters an actionable control, never an empty route scope',
+      (tester) async {
+    await mount(tester, FocusFixtureApp(initialRoute: '/tab/history/'));
+    await press(tester, LogicalKeyboardKey.arrowRight);
+    final focus = FocusManager.instance.primaryFocus;
+    expect(focus, isNot(isA<FocusScopeNode>()));
+    expect(focus?.ancestors.any((node) => node.debugLabel == 'TV content'),
+        isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
       'UI01 real shell: first column LEFT returns rail, RIGHT restores card and category',
       (tester) async {
     final app = FocusFixtureApp();
