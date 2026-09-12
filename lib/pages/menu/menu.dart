@@ -315,7 +315,9 @@ class _ScaffoldMenu extends State<ScaffoldMenu> with RouteAware {
                       if (!mounted || _isCovered) return;
                       final focus = FocusManager.instance.primaryFocus;
                       if (focus is! FocusScopeNode ||
-                          !focus.ancestors.contains(_contentFocusScope)) return;
+                          !focus.ancestors.contains(_contentFocusScope)) {
+                        return;
+                      }
                       // A newly mounted outlet can remember only an empty
                       // route scope. Explicit RIGHT must enter a real control.
                       final controls = _contentFocusScope.traversalDescendants
