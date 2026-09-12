@@ -12,28 +12,6 @@ class LowMemoryModeSettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _ModeBuilder(builder: (context, mode, isMetered) {
-      if (TvMode.enabled) {
-        final enabled = mode == LowMemoryMode.always;
-        return SettingsTile.switchTile(
-          leading: Icons.data_saver_on_rounded,
-          title: const Text('低内存模式'),
-          description:
-              Text(enabled ? '已开启 · 减少播放缓存，降低内存占用（默认）' : '已关闭 · 使用较大播放缓存'),
-          initialValue: enabled,
-          onToggle: (value) async {
-            try {
-              await ((value ?? !enabled)
-                      ? LowMemoryMode.always
-                      : LowMemoryMode.never)
-                  .save();
-            } catch (_) {
-              if (context.mounted) {
-                KazumiDialog.showToast(context: context, message: '设置保存失败，请重试');
-              }
-            }
-          },
-        );
-      }
       return SettingsTile(
         leading: Icons.data_saver_on_rounded,
         title: const Text('低内存模式'),

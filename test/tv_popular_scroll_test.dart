@@ -115,10 +115,12 @@ void main() {
     }
   });
 
-  test('TV memory defaults on, preserves off; mobile retains automatic mode',
+  test('TV memory defaults on and preserves all explicit modes like mobile',
       () async {
-    await LowMemoryMode.auto.save();
+    await GStorage.putSetting(SettingsKeys.lowMemoryPolicy, null);
     expect(LowMemoryMode.current, LowMemoryMode.always);
+    await LowMemoryMode.auto.save();
+    expect(LowMemoryMode.current, LowMemoryMode.auto);
     await LowMemoryMode.never.save();
     expect(LowMemoryMode.current, LowMemoryMode.never);
     TvMode.setEnabledForTesting(false);
