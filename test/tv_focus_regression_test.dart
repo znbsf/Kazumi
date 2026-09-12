@@ -506,6 +506,25 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+      'mobile portrait search submits text and keeps results at large text scale',
+      (tester) async {
+    TvMode.setEnabledForTesting(false);
+    final app = FocusFixtureApp(initialRoute: '/search/', textScale: 1.3);
+    await mount(tester, app);
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pumpAndSettle();
+    final input = find.descendant(
+        of: find.byType(SearchBar), matching: find.byType(TextField));
+    await tester.enterText(input, 'phone query');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(app.search.submitted, 'phone query');
+    expect(find.text(focusItem(99).nameCn), findsOneWidget);
+    expect(find.byKey(const Key('tv-search-entry')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final size in [const Size(854, 480), const Size(1280, 720)]) {
     testWidgets('UI04 history fits $size with 1.25 text scale', (tester) async {
       await mount(tester,
