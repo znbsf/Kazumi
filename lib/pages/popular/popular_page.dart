@@ -390,9 +390,19 @@ class _PopularPageState extends State<PopularPage> {
     return crossCount;
   }
 
-  double _gridItemExtent(int crossCount) =>
-      MediaQuery.sizeOf(context).width / crossCount / 0.65 +
-      MediaQuery.textScalerOf(context).scale(32.0);
+  double _gridItemExtent(int crossCount) {
+    if (TvMode.enabled) {
+      final available = MediaQuery.sizeOf(context).height -
+          MediaQuery.paddingOf(context).vertical -
+          _tvToolbarHeight -
+          _loadingIndicatorHeight -
+          2 * _gridPadding -
+          (StyleString.cardSpace - 2);
+      return available / 2;
+    }
+    return MediaQuery.sizeOf(context).width / crossCount / 0.65 +
+        MediaQuery.textScalerOf(context).scale(32.0);
+  }
 
   Future<void> _scrollToChannel(int channelNumber,
       {bool revealOnly = false}) async {
@@ -526,11 +536,14 @@ class _PopularPageState extends State<PopularPage> {
             _buildChannelInputOverlay(),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => scrollController.animateTo(0,
-            duration: const Duration(milliseconds: 350), curve: Curves.easeOut),
-        child: const Icon(Icons.arrow_upward),
-      ),
+      floatingActionButton: TvMode.enabled
+          ? null
+          : FloatingActionButton(
+              onPressed: () => scrollController.animateTo(0,
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOut),
+              child: const Icon(Icons.arrow_upward),
+            ),
     );
   }
 

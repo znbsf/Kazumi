@@ -100,7 +100,7 @@ class BangumiCardV extends StatelessWidget {
         ),
       ),
     );
-    return TvFocusableSurface(
+    final surface = TvFocusableSurface(
       focusScale: channelNumber != null ? 1 : 1.035,
       onPressed: openBangumi,
       onKeyEvent: onKeyEvent,
@@ -110,6 +110,19 @@ class BangumiCardV extends StatelessWidget {
       highlighted: highlighted,
       child: card,
     );
+    if (TvMode.enabled && channelNumber != null) {
+      return LayoutBuilder(builder: (context, constraints) {
+        final posterHeight =
+            constraints.maxHeight - BangumiContent.tvTitleHeight(context);
+        final width = (posterHeight * 0.65).clamp(1.0, constraints.maxWidth);
+        return Align(
+          alignment: Alignment.topCenter,
+          child: SizedBox(
+              width: width, height: constraints.maxHeight, child: surface),
+        );
+      });
+    }
+    return surface;
   }
 }
 
@@ -154,6 +167,7 @@ class BangumiContent extends StatelessWidget {
   final BangumiItem bangumiItem;
 
   static int maxTextLinesFor(BuildContext context) {
+    if (TvMode.enabled) return 2;
     return isDesktop()
         ? 3
         : (isTablet() &&
@@ -161,6 +175,12 @@ class BangumiContent extends StatelessWidget {
             ? 3
             : 2;
   }
+
+  static double tvTitleHeight(BuildContext context) =>
+      MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.1).scale(14) *
+          1.3 *
+          2 +
+      4;
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +193,9 @@ class BangumiContent extends StatelessWidget {
         child: Text(
           bangumiItem.nameCn,
           textAlign: TextAlign.start,
-          style: const TextStyle(
+          style: TextStyle(
+            fontSize: TvMode.enabled ? 14 : null,
+            height: TvMode.enabled ? 1.3 : null,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.3,
           ),

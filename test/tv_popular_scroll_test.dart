@@ -87,6 +87,18 @@ void main() {
     return app;
   }
 
+  testWidgets('TV home fits two complete rows including titles',
+      (tester) async {
+    await mount(tester);
+    final viewport = tester.getRect(find.byType(CustomScrollView).first);
+    final last = tester.getRect(_poster(12));
+    expect(last.bottom, lessThanOrEqualTo(viewport.bottom - 3));
+    final image =
+        find.descendant(of: _poster(12), matching: find.byType(AspectRatio));
+    expect(tester.widget<AspectRatio>(image.first).aspectRatio, 0.65);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('TV categories stay fully visible in both directions and wrap',
       (tester) async {
     await mount(tester, size: const Size(854, 480));
@@ -198,6 +210,7 @@ void main() {
   testWidgets('leaving pending scroll for rail cancels it and restores content',
       (tester) async {
     final app = await mount(tester);
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump(const Duration(milliseconds: 10));
     await _press(tester, LogicalKeyboardKey.arrowLeft);
@@ -209,13 +222,14 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(app.popular.scrollOffset, closeTo(offset, 0.5));
     await _press(tester, LogicalKeyboardKey.arrowRight);
-    _expectVisibleFocus(tester, 1);
+    _expectVisibleFocus(tester, 7);
   });
 
   testWidgets(
       'OK during scroll keeps detail focus, native return restores card',
       (tester) async {
     await mount(tester);
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump(const Duration(milliseconds: 10));
     await _press(tester, LogicalKeyboardKey.select);
@@ -225,12 +239,13 @@ void main() {
     expect(FocusManager.instance.primaryFocus, same(detailFocus));
     await rootNavigatorKey.currentState!.maybePop();
     await tester.pumpAndSettle();
-    _expectVisibleFocus(tester, 1);
+    _expectVisibleFocus(tester, 7);
   });
 
   testWidgets('numeric preview supersedes pending directional scroll',
       (tester) async {
     await mount(tester);
+    await _press(tester, LogicalKeyboardKey.arrowDown);
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump(const Duration(milliseconds: 10));
     tvChannelInputController.addDigit(2);
