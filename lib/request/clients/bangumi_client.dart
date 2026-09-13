@@ -20,6 +20,12 @@ class BangumiClient {
     String? accessToken,
     CancelToken? cancelToken,
   }) async {
+    if (Uri.parse(url).host == 'next.bgm.tv' &&
+        isBangumiCommentPath(Uri.parse(url).path) &&
+        GStorage.getSetting(SettingsKeys.enableBangumiProxy) &&
+        !hasBangumiMirrorCredentials) {
+      throw const MissingBangumiCommentCredentials();
+    }
     try {
       final response = await DioFactory.apiDio.get(
         url,
@@ -102,7 +108,7 @@ class BangumiClient {
   bool _shouldSignProtectedMirrorRequest(String url, String method) {
     final enableBangumiProxy =
         GStorage.getSetting(SettingsKeys.enableBangumiProxy);
-    if (!enableBangumiProxy) {
+    if (!enableBangumiProxy || !hasBangumiMirrorCredentials) {
       return false;
     }
     final path = Uri.parse(url).path;

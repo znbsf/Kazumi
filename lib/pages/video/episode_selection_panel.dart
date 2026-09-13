@@ -418,8 +418,23 @@ class _RoadSelector extends StatefulWidget {
 
 class _RoadSelectorState extends State<_RoadSelector> {
   final _focusNode = FocusNode(debugLabel: 'Playback road selector');
+  final _roadFocusNodes = <int, FocusNode>{};
   FocusNode? _focusBeforeOpen;
   bool _pointerActivation = false;
+
+  FocusNode _roadFocus(int index) => _roadFocusNodes.putIfAbsent(
+      index, () => FocusNode(debugLabel: 'Playback road option $index'));
+
+  void _handleOpen() {
+    if (!TvMode.enabled) return;
+    // A custom MenuAnchor trigger does not move keyboard focus into its menu.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.roads.isEmpty) return;
+      final node =
+          _roadFocus(widget.visibleRoad.clamp(0, widget.roads.length - 1));
+      if (node.context != null) node.requestFocus();
+    });
+  }
 
   String _name(int index) => index >= 0 && index < widget.roads.length
       ? (widget.roads[index].name.trim().isEmpty
@@ -462,6 +477,9 @@ class _RoadSelectorState extends State<_RoadSelector> {
   @override
   void dispose() {
     _focusNode.dispose();
+    for (final node in _roadFocusNodes.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
@@ -478,8 +496,13 @@ class _RoadSelectorState extends State<_RoadSelector> {
         inMutuallyExclusiveGroup: true,
         child: MenuItemButton(
           key: ValueKey('road-option-$index'),
+          focusNode: _roadFocus(index),
           onPressed: () => widget.onChanged(index),
           style: ButtonStyle(
+            side: WidgetStateProperty.resolveWith((states) =>
+                TvMode.enabled && states.contains(WidgetState.focused)
+                    ? BorderSide(color: colors.primary, width: 3)
+                    : BorderSide.none),
             minimumSize: WidgetStatePropertyAll(Size(width, 56)),
             padding: const WidgetStatePropertyAll(
                 EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
@@ -546,6 +569,7 @@ class _RoadSelectorState extends State<_RoadSelector> {
         crossAxisUnconstrained: false,
         consumeOutsideTap: true,
         animated: !reduceMotion,
+        onOpen: _handleOpen,
         onClose: _handleClose,
         alignmentOffset: const Offset(0, 8),
         style: MenuStyle(

@@ -8,6 +8,7 @@ import 'package:kazumi/bean/widget/loading_indicator.dart';
 import 'package:kazumi/bean/widget/state_presentation.dart';
 import 'package:kazumi/modules/bangumi/episode_item.dart';
 import 'package:kazumi/modules/comments/comment_item.dart';
+import 'package:kazumi/utils/bangumi_mirror_credentials.dart';
 
 class EpisodeCommentsView extends StatelessWidget {
   const EpisodeCommentsView({
@@ -21,6 +22,7 @@ class EpisodeCommentsView extends StatelessWidget {
     required this.onToggleSort,
     required this.onSelectEpisode,
     required this.onRefresh,
+    this.missingCredentials = false,
   });
 
   final int episode;
@@ -28,6 +30,7 @@ class EpisodeCommentsView extends StatelessWidget {
   final List<EpisodeCommentItem> comments;
   final bool isLoading;
   final bool hasError;
+  final bool missingCredentials;
   final bool isAscending;
   final VoidCallback onToggleSort;
   final VoidCallback onSelectEpisode;
@@ -67,7 +70,15 @@ class EpisodeCommentsView extends StatelessWidget {
               padding: EdgeInsets.fromLTRB(gutter + 4, 16, gutter, 12),
               sliver: SliverToBoxAdapter(child: _buildToolbar(context)),
             ),
-            if (!isLoading && hasError && comments.isEmpty)
+            if (missingCredentials)
+              const SliverToBoxAdapter(
+                child: GeneralErrorWidget(
+                  icon: Icons.key_off_outlined,
+                  title: MissingBangumiCommentCredentials.message,
+                  errMsg: '此测试包暂不提供镜像评论。播放和选集不受影响。',
+                ),
+              )
+            else if (!isLoading && hasError && comments.isEmpty)
               SliverToBoxAdapter(
                 child: GeneralErrorWidget(
                   icon: Icons.cloud_off_rounded,
@@ -201,7 +212,7 @@ class EpisodeCommentsView extends StatelessWidget {
           dimension: 48,
           child: IconButton.filledTonal(
             tooltip: isLoading ? '正在加载评论' : '刷新评论',
-            onPressed: isLoading ? null : onRefresh,
+            onPressed: isLoading || missingCredentials ? null : onRefresh,
             style: IconButton.styleFrom(
               backgroundColor: colors.secondaryContainer,
               disabledBackgroundColor: colors.secondaryContainer,

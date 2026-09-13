@@ -10,6 +10,62 @@ void main() {
   setUp(() => TvMode.setEnabledForTesting(true));
   tearDown(() => TvMode.setEnabledForTesting(false));
 
+  testWidgets('TV road menu focuses choices and supports up down and confirm',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: SizedBox(
+          width: 400,
+          child: EpisodeSelectionPanel(
+            title: '线路测试',
+            roads: List.generate(
+                2,
+                (i) =>
+                    Road(name: '线路$i', data: ['url$i'], identifier: ['剧集$i'])),
+            selectedRoad: 0,
+            selectedEpisode: 1,
+            downloads: const {},
+            onEpisodeSelected: (_, __) {},
+          ),
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    final anchor = tester.widget<MenuAnchor>(find.byType(MenuAnchor));
+    anchor.childFocusNode!.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    bool focused(int index) =>
+        tester
+            .widget<MenuItemButton>(find.byKey(ValueKey('road-option-$index')))
+            .focusNode
+            ?.hasFocus ==
+        true;
+    expect(focused(0), isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(focused(1), isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(focused(0), isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('road-option-0')), findsNothing);
+    expect(find.text('剧集1'), findsOneWidget);
+    expect(anchor.childFocusNode!.hasFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(focused(1), isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('road-option-1')), findsNothing);
+    expect(anchor.childFocusNode!.hasFocus, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
       'TV panel locates recycled episode, wraps ragged row and activates exact road',
       (tester) async {

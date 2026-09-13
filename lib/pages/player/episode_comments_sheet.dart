@@ -8,6 +8,8 @@ import 'package:kazumi/pages/player/episode_comments_picker.dart';
 import 'package:kazumi/pages/player/episode_comments_view.dart';
 import 'package:kazumi/pages/video/video_controller.dart';
 import 'package:kazumi/request/apis/bangumi_api.dart';
+import 'package:kazumi/utils/bangumi_mirror_credentials.dart';
+import 'package:kazumi/services/storage/storage.dart';
 
 class EpisodeCommentsSheet extends StatefulWidget {
   const EpisodeCommentsSheet({
@@ -31,6 +33,7 @@ class _EpisodeCommentsSheetState extends State<EpisodeCommentsSheet>
   late int _selectedEpisode;
   bool _isLoading = false;
   bool _hasError = false;
+  bool _missingCredentials = false;
   int _requestVersion = 0;
   final Map<int, EpisodeInfo> _episodeInfoByIndex = {};
 
@@ -74,7 +77,17 @@ class _EpisodeCommentsSheetState extends State<EpisodeCommentsSheet>
 
   Future<void> _loadComments() async {
     final version = ++_requestVersion;
+    if (GStorage.getSetting(SettingsKeys.enableBangumiProxy) &&
+        !hasBangumiMirrorCredentials) {
+      setState(() {
+        _missingCredentials = true;
+        _isLoading = false;
+        _hasError = false;
+      });
+      return;
+    }
     setState(() {
+      _missingCredentials = false;
       _isLoading = true;
       _hasError = false;
     });
@@ -147,6 +160,7 @@ class _EpisodeCommentsSheetState extends State<EpisodeCommentsSheet>
         comments: matchesEpisode ? comments : [],
         isLoading: _isLoading,
         hasError: _hasError,
+        missingCredentials: _missingCredentials,
         isAscending: _controller.isCommentsAscending,
         onToggleSort: _controller.toggleSortOrder,
         onSelectEpisode: _showEpisodeSelection,
