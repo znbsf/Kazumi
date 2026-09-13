@@ -93,4 +93,3 @@ TV APK 使用本 fork 原创几何电视标识（GPL-3.0），不打包上游人
 Bangumi、弹弹 Play、Anime4K、Syncplay 与 trace.moe。依赖或代码的存在不代表相关功能
 已经在 TV 预览版完成验收。软件许可不授予第三方视频、评论、图片或台标的内容使用权；
 请遵守相应服务条款和资源许可，软件按 [LICENSE](LICENSE) 所述提供。
-
