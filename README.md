@@ -33,7 +33,7 @@
 ## 安装与使用
 
 - Android 7.0/API24及以上的Android TV设备。原生APK不依赖Flutter或额外libmpv，提供一个通用包；目前主要真机证据来自Android 9、32位ARM小米电视。
-- 下载Release中的APK侧载。原生包名 `com.znbsf.kazumi.compose.tv`；旧版为 `com.znbsf.kazumi.tv`，两者可以并存，数据不自动迁移。
+- 下载Release中的APK侧载。原生包名 `com.znbsf.kazumi.compose.tv`；本次Legacy版为 `com.predidit.kazumi.tv`，两者可以并存，数据不自动迁移。
 - 首次打开按引导准备播放来源，在设置选择可用镜像，然后从作品详情搜索来源。目录能展示节目不代表对应播放站点可用。
 - 遥控器方向键移动，确认选择；播放进度条支持左右调整，返回关闭面板或返回上页。
 - 本轮测试包延续本机已有开发签名，Release构建不可调试；签名不同的APK不能直接覆盖。正式签名与长期升级方案尚未收口，升级前备份收藏/历史。
@@ -57,6 +57,8 @@
 | 版本 | 0.3.0-preview.1 | 2.3.1-tv-legacy.1 |
 | 源码 | `main` | `codex/upstream-tv-complete` |
 | 安装 | 通用APK，10.11 MiB | armeabi-v7a：29.26 MiB；arm64-v8a：30.23 MiB |
+
+更早的A线Preview 5使用 `com.znbsf.kazumi.tv`，保留在历史Releases；本次Legacy发布来自较新的Flutter完整适配分支，不冒充该A线的覆盖升级。
 
 旧路线沿用较多原应用功能与TV适配，新路线的迁移仍未达到完整功能等价。两版均为Pre-release；旧发布和源码分支保留，不通过更换默认分支抹除历史。
 
