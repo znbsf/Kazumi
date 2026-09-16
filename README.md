@@ -62,6 +62,13 @@
 
 旧路线沿用较多原应用功能与TV适配，新路线的迁移仍未达到完整功能等价。两版均为Pre-release；旧发布和源码分支保留，不通过更换默认分支抹除历史。
 
+<details>
+<summary>旧Flutter路线界面对照</summary>
+
+![旧FlutterTV路线实机首页](docs/screenshots/legacy-home.png)
+
+</details>
+
 ## 构建
 
 需要JDK17或Android Studio JBR、Android SDK36。不需要Flutter SDK。
