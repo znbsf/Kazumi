@@ -11,6 +11,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 object HttpText {
+    data class Page(val body:String,val url:String,val method:String,val status:Int)
     private fun build(url: String, method: String, headers: Map<String,String>, body: String?): Request {
         val uri = URI(url)
         require(uri.scheme in listOf("http", "https") && !uri.host.isNullOrBlank()) { "网络地址无效" }
@@ -31,6 +32,12 @@ object HttpText {
 
     suspend fun requestAsync(url: String, method: String = "GET", headers: Map<String,String> = emptyMap(), body: String? = null,
         maxChars: Int = 2_000_000): String = exchange(AppHttp.client,build(url,method,headers,body)) { read(it,maxChars) }
+
+    /** Source challenges may legitimately return 403/429. The rule checks the bounded page before classifying HTTP failure. */
+    suspend fun pageAsync(url:String,method:String="GET",headers:Map<String,String> = emptyMap(),body:String?=null):Page =
+        exchange(AppHttp.client,build(url,method,headers,body)) { response ->
+            Page(response.body?.charStream()?.use { BoundedText.read(it,2_000_000) }.orEmpty(),response.request.url.toString(),response.request.method,response.code)
+        }
 
     /** Cancel the socket as well as the coroutine; response ownership stays inside the callback. */
     internal suspend fun <T> exchange(client: OkHttpClient, request: Request, consume: (Response) -> T): T = suspendCancellableCoroutine { continuation ->

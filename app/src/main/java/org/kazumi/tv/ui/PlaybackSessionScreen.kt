@@ -84,7 +84,7 @@ fun PlaybackSessionScreen(subject: Subject, ruleName: String, initialEpisode: Ep
             .copy(resumeKey = "$activeRule|${episode.pageUrl}")
     }, verification = { url, done ->
         val rule = repository.rules.firstOrNull { it.name == activeRule }
-        if (rule != null) VerificationScreen(rule, url, done)
+        if (rule != null) VerificationScreen(rule, url, onDone=done)
     }, onClose = onClose) { media ->
         PlayerScreen(media, subject, displaySession=displayModes,
             onPrevious = if (index > 0) ({ select(episodes[index - 1]) }) else null,

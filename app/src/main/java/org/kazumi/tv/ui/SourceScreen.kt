@@ -50,7 +50,7 @@ fun SourceScreen(subject: Subject,transfer:SourceTransfer?=null,onSelect:((Sourc
     var verifying by remember { mutableStateOf(false) }
     val results = remember { mutableStateMapOf<Int, List<SourceMatch>>() }
     val states = remember { mutableStateMapOf<Int, String>() }
-    val verificationPages = remember { mutableStateMapOf<Int, String>() }
+    val verificationPages = remember { mutableStateMapOf<Int, SourceVerificationRequired>() }
     val sourceFocus = remember { FocusRequester() }
     val roadFocus = remember { FocusRequester() }
     val grid = rememberLazyGridState()
@@ -70,7 +70,7 @@ fun SourceScreen(subject: Subject,transfer:SourceTransfer?=null,onSelect:((Sourc
                         results[index] = found
                         states[index] = if (found.isEmpty()) "没有结果" else "${found.size} 个结果"
                     } catch (cancelled: CancellationException) { throw cancelled }
-                    catch (failure: SourceVerificationRequired) { states[index] = failure.message.orEmpty(); verificationPages[index] = failure.pageUrl }
+                    catch (failure: SourceVerificationRequired) { states[index] = failure.message.orEmpty(); verificationPages[index] = failure }
                     catch (error: Exception) { states[index] = if (error is IllegalStateException) error.message ?: "检索失败" else "连接失败，可重试" }
                 }
             } }
@@ -82,7 +82,7 @@ fun SourceScreen(subject: Subject,transfer:SourceTransfer?=null,onSelect:((Sourc
         busy = true
         try { roads = repository.chapters(repository.rules[source], chosen) }
         catch (cancelled: CancellationException) { throw cancelled }
-        catch (failure: SourceVerificationRequired) { pageError = failure.message; verificationPages[source] = failure.pageUrl }
+        catch (failure: SourceVerificationRequired) { pageError = failure.message; verificationPages[source] = failure }
         catch (error: Exception) { pageError = error.message ?: "线路加载失败" }
         finally { busy = false }
         if (roads.isNotEmpty()) { withFrameNanos { }; roadFocus.requestFocus() }
@@ -98,11 +98,12 @@ fun SourceScreen(subject: Subject,transfer:SourceTransfer?=null,onSelect:((Sourc
     BackHandler(match != null) { match = null; episode = null; pageError = null }
     BackHandler(episode != null) { closePlayer() }
     if (verifying) Dialog(onDismissRequest = { verifying = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        VerificationScreen(repository.rules[source], verificationPages[source] ?: match?.url ?: repository.rules[source].baseUrl) { verifying = false; refresh++; chapterRetry++ }
+        VerificationScreen(repository.rules[source], verificationPages[source]?.pageUrl ?: match?.url ?: repository.rules[source].baseUrl, challenge=verificationPages[source]) { verifying = false; refresh++; chapterRetry++ }
     }
     episode?.let { selected ->
         Dialog(onDismissRequest = { closePlayer() }, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
             PlaybackSessionScreen(subject, repository.rules[source].name, selected, roads, road,
+                sourceCatalog = repository,
                 initialOrigin = match?.let { org.kazumi.tv.data.PlaybackOrigin(repository.rules[source].name, it.title, it.url, roads[road].title) },
                 onSelection = { next ->
                     roads.indexOfFirst { line -> line.episodes.any { it.pageUrl == next.pageUrl } }.takeIf { it >= 0 }?.let { road = it }

@@ -18,16 +18,43 @@ import kotlin.coroutines.resumeWithException
 /** One isolated WebView per attempt; dynamic ES5 discovery and bounded, cancellable probes. */
 class WebMediaResolver(private val context: Context, private val timeoutMs: Long = 25000,
     private val diagnostic: (String) -> Unit = {}) {
+    suspend fun resolve(pageUrl:String,rule:SourceRule,title:String):PlaybackRequest = try {
+        resolveOnce(pageUrl,rule,title)
+    } catch(challenge:SourceVerificationRequired) {
+        if(!AutomaticVerification.run(context,rule,challenge.pageUrl))throw challenge
+        resolveOnce(pageUrl,rule,title)
+    }
     @SuppressLint("SetJavaScriptEnabled")
-    suspend fun resolve(pageUrl: String, rule: SourceRule, title: String): PlaybackRequest = withContext(Dispatchers.Main) {
+    private suspend fun resolveOnce(pageUrl: String, rule: SourceRule, title: String): PlaybackRequest = withContext(Dispatchers.Main) {
         SourceRule.httpUrl(pageUrl)
         val defaults = mapOf("Referer" to rule.referer, "User-Agent" to rule.userAgent)
+        var lastProbe: MediaResolutionFailure? = null
         if (MediaAddress.isMedia(pageUrl)) return@withContext probe(PlaybackRequest(pageUrl,defaults,title))
+        SoraniPlayback.resolveFromRule(pageUrl,rule,defaults,title)?.let {
+            diagnostic("source_api resolved")
+            return@withContext probe(it)
+        }
+        // Some TV WebViews cannot execute modern site bundles even though player data is ordinary JSON.
+        // A discovered address still has to pass the same HTTP/media probe as a WebView candidate.
+        val sourcePage=try { withTimeoutOrNull(12000) { org.kazumi.tv.data.HttpText.pageAsync(pageUrl,headers=defaults) } }
+            catch(cancelled:CancellationException) { throw cancelled } catch(_:Exception) { null }
+        if(sourcePage!=null)SourcePageChecks.check(rule,sourcePage.body,sourcePage.url)
+        val html=sourcePage?.takeIf { it.status in 200..299 }?.body
+        diagnostic("page_metadata bytes=${html?.length ?: 0}")
+        if(html!=null) {
+            SourcePageChecks.check(rule,html,pageUrl)
+            diagnostic("page_metadata direct=${PageMediaMetadata.extract(html).size} sorani=${SoraniPlayback.apiUrl(pageUrl,html)!=null}")
+            SoraniPlayback.resolve(pageUrl,html,defaults,title)?.let { return@withContext probe(it) }
+            for(url in PageMediaMetadata.extract(html)) {
+                try { return@withContext probe(PlaybackRequest(url,mapOf("Referer" to pageUrl,"User-Agent" to rule.userAgent),title)) }
+                catch(cancelled:CancellationException) { throw cancelled }
+                catch(failure:MediaResolutionFailure) { lastProbe=failure; diagnostic("metadata: ${failure.message}") }
+            }
+        }
         val candidates = Channel<PlaybackRequest>(24)
         val seen = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
         val fatal = AtomicReference<Exception?>(null)
         var scriptError = false
-        var lastProbe: MediaResolutionFailure? = null
         val web = WebView(context)
         fun offer(url: String, headers: Map<String,String>) {
             if (runCatching { SourceRule.httpUrl(url) }.isSuccess && seen.size < 24 && seen.add(url))
@@ -41,10 +68,14 @@ class WebMediaResolver(private val context: Context, private val timeoutMs: Long
             web.settings.allowContentAccess = false
             web.settings.mediaPlaybackRequiresUserGesture = false
             web.settings.userAgentString = rule.userAgent
+            web.settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
             web.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(message: ConsoleMessage): Boolean {
                     if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR &&
-                        (message.message().contains("SyntaxError") || message.message().contains("Unexpected token"))) scriptError = true
+                        (message.message().contains("SyntaxError") || message.message().contains("Unexpected token"))) {
+                        if(!scriptError)diagnostic("script_syntax_error line=${message.lineNumber()} host=${runCatching { java.net.URI(message.sourceId()).host }.getOrNull().orEmpty()}")
+                        scriptError = true
+                    }
                     return true // Do not copy remote console text, URLs or tokens into application logs.
                 }
             }

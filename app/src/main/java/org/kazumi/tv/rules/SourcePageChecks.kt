@@ -6,7 +6,7 @@ import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
 import org.w3c.dom.NodeList
 
-class SourceVerificationRequired(val pageUrl: String) : IllegalStateException("来源需要网页验证，请完成后重试")
+class SourceVerificationRequired(val pageUrl: String, val method:String="GET", val body:String?=null) : IllegalStateException("来源需要网页验证，请完成后重试")
 
 object SourcePageChecks {
     fun looksLikeChallengeTitle(title: String): Boolean = title.trim().lowercase().let { value ->
@@ -25,6 +25,7 @@ object SourcePageChecks {
                     (XPathFactory.newInstance().newXPath().evaluate(value,xml,XPathConstants.NODESET) as NodeList).length > 0
                 } catch (_: Exception) { throw IllegalArgumentException("验证检测 XPath 无效") }
                 2 -> html.contains(value)
+                3 -> try { Regex(value).containsMatchIn(html) } catch (_: Exception) { throw IllegalArgumentException("验证检测正则无效") }
                 else -> throw IllegalArgumentException("此规则的验证检测方式尚未适配")
             }
         }

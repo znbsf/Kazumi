@@ -19,6 +19,40 @@ class TvNetworkInstrumentation : Instrumentation() {
     override fun onStart() {
         val output = Bundle()
         try {
+            if(mode=="real-ui-storage") {
+                val isolated=object:android.content.ContextWrapper(targetContext) {
+                    override fun getSharedPreferences(name:String,mode:Int)=baseContext.getSharedPreferences("real_ui_test_$name",mode)
+                }
+                val actualRows=LibraryStore(targetContext).history().filter { it.subject.id==99000916 }
+                val isolatedRows=LibraryStore(isolated).history().filter { it.subject.id==99000916 }
+                output.putString("stream","UI fixture storage: actual=${actualRows.map { it.position to it.duration }}, isolated=${isolatedRows.map { it.position to it.duration }}, actual_incognito=${TvPreferences(targetContext).incognito}\n")
+                finish(Activity.RESULT_OK,output);return
+            }
+            if(mode=="real-play-ui") {
+                try { RealPlaybackUiRegression.run(this) }
+                catch(failure:Exception) { output.putString("stream","Real playback UI FAILED: ${failure.javaClass.simpleName} ${failure.message}\n");finish(Activity.RESULT_CANCELED,output);return }
+                output.putString("stream","Real playback UI: search, select_episode12, auto_enter_player, rendered_progress, back_to_episodes, resume, user_history_preserved=OK\n")
+                finish(Activity.RESULT_OK,output);return
+            }
+            if(mode=="verification-live") {
+                VerificationLiveRegression.run(this)
+                output.putString("stream","Real verification run complete.\n")
+                finish(Activity.RESULT_OK,output);return
+            }
+            if(mode=="verification") {
+                try { VerificationRegression.run(this) }
+                catch(failure:Exception) {
+                    output.putString("stream","Verification FAILED: ${failure.javaClass.simpleName}: ${failure.message}; ${failure.stackTrace.take(4).joinToString()}\n")
+                    finish(Activity.RESULT_CANCELED,output);return
+                }
+                output.putString("stream","Verification: button, async_script, manual_image_submit, false_success_guards, cancellation, exact_POST_cookie_retry=OK\n")
+                finish(Activity.RESULT_OK,output);return
+            }
+            if(mode=="real-sources" || mode=="real-pages" || mode=="real-play") {
+                RealSourceRegression.run(this,mode=="real-pages",mode=="real-play")
+                output.putString("stream","Real source diagnosis finished; per-source results above are not playback acceptance.\n")
+                finish(Activity.RESULT_OK,output); return
+            }
             if(mode=="release-danmaku") {
                 check(targetContext.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE==0)
                 val isolated=object:android.content.ContextWrapper(targetContext) {
