@@ -4,7 +4,7 @@
 
 **首个原生公开测试版：0.3.0-preview.1。** 基础浏览和内置播放已可试用，仍在迁移与验证阶段；不是上游官方TV版，也不是全功能稳定版。
 
-[下载原生测试版](https://github.com/znbsf/Kazumi/releases/tag/v0.3.0-preview.1) · [旧Flutter TV版](https://github.com/znbsf/Kazumi/releases/tag/v2.3.1-tv-legacy.1) · [功能与验证台账](docs/MIGRATION-STATUS.md) · [下一步](docs/ROADMAP.md)
+[下载原生测试版](https://github.com/znbsf/KazumiTV/releases/tag/v0.3.0-preview.1) · [旧Flutter TV版](https://github.com/znbsf/KazumiTV/releases/tag/v2.3.1-tv-legacy.1) · [功能与验证台账](docs/MIGRATION-STATUS.md) · [下一步](docs/ROADMAP.md)
 
 ## 界面
 
