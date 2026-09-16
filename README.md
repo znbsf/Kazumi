@@ -33,6 +33,7 @@
 ## 安装与使用
 
 - Android 7.0/API24及以上的Android TV设备。原生APK不依赖Flutter或额外libmpv，提供一个通用包；目前主要真机证据来自Android 9、32位ARM小米电视。
+- 启动器中选择 **KazumiTV 原生**；旧Flutter归档版显示 **KazumiTV Legacy**。普通Launcher与电视Launcher均指向同一原生应用。
 - 下载Release中的APK侧载。原生包名 `com.znbsf.kazumi.compose.tv`；本次Legacy版为 `com.predidit.kazumi.tv`，两者可以并存，数据不自动迁移。
 - 首次打开按引导准备播放来源，在设置选择可用镜像，然后从作品详情搜索来源。目录能展示节目不代表对应播放站点可用。
 - 遥控器方向键移动，确认选择；播放进度条支持左右调整，返回关闭面板或返回上页。

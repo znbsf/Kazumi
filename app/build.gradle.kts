@@ -16,7 +16,7 @@ android {
         applicationId = "com.znbsf.kazumi.compose.tv"
         minSdk = 24
         targetSdk = 36
-        versionCode = 42
+        versionCode = 43
         versionName = "0.3.0-preview.1"
         buildConfigField("String", "DANDAN_APP_ID", quoted(bundledDanmaku.getProperty("DANDANAPI_APPID", "")))
         buildConfigField("String", "DANDAN_APP_SECRET", quoted(bundledDanmaku.getProperty("DANDANAPI_KEY", "")))
