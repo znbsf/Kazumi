@@ -2,11 +2,11 @@
 
 为电视遥控器设计的动画浏览与播放应用。当前主线使用 **Kotlin · Compose for TV · Media3**，延续深色、绿色和高密度海报浏览，独立于原 Flutter 工程开发。
 
-**首个原生公开测试版：0.3.0-preview.1。** 基础浏览和内置播放已可试用，仍在迁移与验证阶段；不是上游官方TV版，也不是全功能稳定版。
+**当前原生公开测试版：0.3.1-preview.1。** 基础浏览和内置播放已可试用，仍在迁移与验证阶段；不是上游官方TV版，也不是全功能稳定版。
 
-[下载原生测试版](https://github.com/znbsf/KazumiTV/releases/tag/v0.3.0-preview.1) · [旧Flutter TV版](https://github.com/znbsf/KazumiTV/releases/tag/v2.3.1-tv-legacy.1) · [功能与验证台账](docs/MIGRATION-STATUS.md) · [下一步](docs/ROADMAP.md)
+[下载原生测试版](https://github.com/znbsf/KazumiTV/releases/tag/v0.3.1-preview.1) · [旧Flutter TV版](https://github.com/znbsf/KazumiTV/releases/tag/v2.3.1-tv-legacy.1) · [功能与验证台账](docs/MIGRATION-STATUS.md) · [下一步](docs/ROADMAP.md)
 
-主分支开发版本已推进到 **0.3.1-dev**：补齐三类来源验证流程，修复 MacCMS 播放数据读取和 Sorani 旧 WebView 兼容；已在 Android 9 电视验证具体来源第 12 集的播放、跳转，以及界面返回续播。[修复原因、实测线路与限制](docs/PLAYBACK-VERIFICATION-0.3.1.md)。这些修复尚未包含在上面的 0.3.0 下载包中。
+本次 **0.3.1-preview.1**：补齐三类来源验证流程，修复 MacCMS 播放数据读取和 Sorani 旧 WebView 兼容；已在 Android 9 电视验证具体来源第 12 集的播放、跳转，以及界面返回续播。[修复原因、实测线路与限制](docs/PLAYBACK-VERIFICATION-0.3.1.md)。这些修复已包含在当前下载包中。
 
 ## 界面
 
@@ -24,7 +24,7 @@
 | --- | --- |
 | 浏览与资料 | 分类海报、自动加载后续内容、分页搜索、星期/季度排期、详情、全文简介、关联动画、角色与制作名单 |
 | 规则与播放源 | 初始化引导、目录镜像、来源安装/导入/更新/排序/恢复、选源与线路、长篇选集分段/倒序/定位、解析取消与分阶段错误 |
-| 来源验证（0.3.1-dev） | 图片验证码人工输入后自动提交、规则按钮/脚本自动验证、成功判断、Cookie和原请求恢复、电视网页光标 |
+| 来源验证（0.3.1） | 图片验证码人工输入后自动提交、规则按钮/脚本自动验证、成功判断、Cookie和原请求恢复、电视网页光标 |
 | 内置播放 | Media3、暂停/进度/快进退、选集、换源换线、倍速、画面比例、音轨字幕、系统媒体会话、定时暂停 |
 | 弹幕 | 弹弹play只读接入、自动/手动匹配、开关、偏移校准；公开测试包内置应用凭证，用户配置可覆盖 |
 | 个人数据 | 历史续播与来源上下文、收藏分类/排序/批量管理、隐身播放、删除撤销、本机备份恢复、WebDAV收藏同步预览与条件提交 |
@@ -58,9 +58,9 @@
 | --- | --- | --- |
 | 定位 | 后续主要开发方向 | 保留比较和回退参考 |
 | 技术 | Kotlin / Compose / Media3 | Flutter / media-kit |
-| 版本 | 0.3.0-preview.1 | 2.3.1-tv-legacy.1 |
+| 版本 | 0.3.1-preview.1 | 2.3.1-tv-legacy.1 |
 | 源码 | `main` | `codex/upstream-tv-complete` |
-| 安装 | 通用APK，10.11 MiB | armeabi-v7a：29.26 MiB；arm64-v8a：30.23 MiB |
+| 安装 | 通用APK，10.13 MiB | armeabi-v7a：29.26 MiB；arm64-v8a：30.23 MiB |
 
 更早的A线Preview 5使用 `com.znbsf.kazumi.tv`，保留在历史Releases；本次Legacy发布来自较新的Flutter完整适配分支，不冒充该A线的覆盖升级。
 

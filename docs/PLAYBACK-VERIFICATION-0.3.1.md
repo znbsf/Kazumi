@@ -1,6 +1,6 @@
-# 0.3.1-dev：播放解析与验证迁移
+# 0.3.1：播放解析与验证迁移
 
-本轮针对公开测试版反馈继续修复。开发版本为 `0.3.1-dev` / versionCode 44；并未替换 `0.3.0-preview.1` 的已发布 APK 或标签。以下是小米 Android 9 / ARMv7 / WebView 66 的证据，不代表所有站点和设备均通过。
+本轮针对公开测试版反馈继续修复。修复在 `0.3.1-dev` / versionCode 44 完成真机验证，发布为 `0.3.1-preview.1` / versionCode 45；保留 `0.3.0-preview.1` 的已发布 APK 或标签。以下是小米 Android 9 / ARMv7 / WebView 66 的证据，不代表所有站点和设备均通过。
 
 ## 原因与修复
 
