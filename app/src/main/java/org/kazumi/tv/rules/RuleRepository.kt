@@ -1,0 +1,35 @@
+package org.kazumi.tv.rules
+
+import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.kazumi.tv.data.HttpText
+import java.net.URI
+
+class RuleRepository(context: Context):SourceCatalog {
+    override val rules = RuleStore(context).enabled()
+    private val engine = XPathRuleEngine()
+    private val api = ApiRuleEngine()
+    override suspend fun search(rule: SourceRule, keyword: String) = withContext(Dispatchers.IO) {
+        rule.checkSupported()
+        if (rule.json.optString("searchMode") == "api") {
+            val config = rule.json.getJSONObject("searchApiConfig")
+            val request = api.request(config.getJSONObject("request"), mapOf("keyword" to keyword))
+            api.search(config, SourcePageChecks.check(rule, HttpText.requestAsync(request.url, request.method, headers(rule) + request.headers, request.body), request.url))
+        } else {
+            rule.checkSupported()
+            val uri = URI(rule.searchUrl(keyword))
+            val url = if (rule.usePost) URI(uri.scheme, uri.authority, uri.path, null, null).toString() else uri.toString()
+            engine.search(rule, SourcePageChecks.check(rule, HttpText.requestAsync(url, if (rule.usePost) "POST" else "GET", headers(rule) + if (rule.usePost) mapOf("Content-Type" to "application/x-www-form-urlencoded") else emptyMap(), if (rule.usePost) uri.rawQuery else null), url))
+        }
+    }
+    override suspend fun chapters(rule: SourceRule, match: SourceMatch) = withContext(Dispatchers.IO) {
+        rule.checkSupported()
+        if (rule.json.optString("chapterMode") == "api") {
+            val config = rule.json.getJSONObject("chapterApiConfig")
+            val request = api.request(config.getJSONObject("request"), mapOf("source" to match.url))
+            api.chapters(rule, config, SourcePageChecks.check(rule, HttpText.requestAsync(request.url, request.method, headers(rule) + request.headers, request.body), request.url), match.url)
+        } else engine.chapters(rule, SourcePageChecks.check(rule, HttpText.requestAsync(rule.resolve(match.url), headers = headers(rule)), rule.resolve(match.url)))
+    }
+    private fun headers(rule: SourceRule) = mapOf("User-Agent" to rule.userAgent, "Referer" to rule.referer)
+}

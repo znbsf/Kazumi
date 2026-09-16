@@ -1,1 +1,0 @@
-An anime collection APP based on custom rules.

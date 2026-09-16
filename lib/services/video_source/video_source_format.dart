@@ -1,4 +1,0 @@
-enum VideoSourceFormat {
-  auto,
-  hls,
-}
